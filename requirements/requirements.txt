@@ -1,0 +1,21 @@
+# Machine Learning & Modeling
+scikit-learn
+tensorflow
+pandas
+numpy
+
+# Model Interpretation & Explainability
+shap
+lime
+
+# Web Dashboard & APIs
+streamlit
+gradio
+flask
+fastapi
+uvicorn
+
+# APIs & Feature Store
+requests
+hopsworks
+python-dotenv
