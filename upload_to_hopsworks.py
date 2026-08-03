@@ -17,9 +17,13 @@ if not hopsworks_api_key:
     raise ValueError("HOPSWORKS_API_KEY not found in .env. Please add it to connect.")
 
 print("--- Step 1: Loading Dataset ---")
-file_path = "data/lahore_aqi_historical.csv"
+file_path = "data/lahore_aqi_historical_2024_onwards.csv"
 if not os.path.exists(file_path):
-    raise FileNotFoundError(f"{file_path} does not exist. Run historical_backfill.py first.")
+    file_path = "data/lahore_aqi_historical.csv"
+if not os.path.exists(file_path):
+    raise FileNotFoundError(
+        "No historical CSV found. Run historical_backfill.py first."
+    )
 
 df = pd.read_csv(file_path)
 
@@ -43,7 +47,7 @@ print("\n--- Step 3: Creating and Inserting Data into Feature Group ---")
 aqi_fg = fs.get_or_create_feature_group(
     name="lahore_aqi_features",
     version=1,
-    primary_key=["hour", "month", "day_of_week"],
+    primary_key=["timestamp"],
     description="Lahore PM2.5 Air Quality historical dataset with weather features.",
     event_time="timestamp"
 )

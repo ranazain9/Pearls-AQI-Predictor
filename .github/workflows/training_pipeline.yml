@@ -1,0 +1,50 @@
+name: Training Pipeline (Daily)
+
+on:
+  schedule:
+    - cron: "0 2 * * *"  # daily at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  training-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/requirements.txt
+
+      # Artifacts are scoped to a single workflow run; when none is found,
+      # training falls back to data/lahore_aqi_historical_2024_onwards.csv from checkout.
+      - name: Download latest features (if available)
+        uses: actions/download-artifact@v4
+        with:
+          name: aqi-features
+          path: data/
+        continue-on-error: true
+
+      - name: Verify training data exists
+        run: |
+          if [ ! -f data/lahore_aqi_historical_2024_onwards.csv ]; then
+            echo "No feature CSV in repo or artifact — run historical_backfill.py or feature pipeline first."
+            exit 1
+          fi
+
+      - name: Run training pipeline
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+        run: python pipelines/training_pipeline.py --register
+
+      - name: Upload model artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trained-models
+          path: models/
+          if-no-files-found: warn

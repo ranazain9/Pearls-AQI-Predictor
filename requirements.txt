@@ -12,6 +12,9 @@ shap
 streamlit
 flask
 
+# Deep Learning
+tensorflow
+
 # APIs & Feature Store
 requests
 hopsworks==5.0.0

@@ -4,3 +4,7 @@
 
 __pycache__/
 myvenv/
+models/
+*.pkl
+*.keras
+debug-*.log

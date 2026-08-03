@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pearls AQI Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #12161C;
+            --surface: #1B212B;
+            --surface-alt: #212836;
+            --border: #2A3140;
+            --text-primary: #EDEFF2;
+            --text-muted: #8B93A1;
+            --text-faint: #5A6273;
+            --accent-amber: #E8A33D;
+
+            --c-good: #4CAF7D;
+            --c-moderate: #D9C24C;
+            --c-usg: #E8A33D;
+            --c-unhealthy: #E2673B;
+            --c-very-unhealthy: #A15CC4;
+            --c-hazardous: #8B2E3E;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(232, 163, 61, 0.07), transparent 60%),
+                radial-gradient(ellipse 700px 500px at 90% 10%, rgba(161, 92, 196, 0.05), transparent 60%),
+                var(--bg-deep);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 28px 20px 60px;
+        }
+
+        .wrap {
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        /* ---------- Header ---------- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-amber), #C97A2B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #12161C;
+        }
+
+        .brand-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .brand-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .location {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .location-sub {
+            font-size: 11.5px;
+            color: var(--text-faint);
+            margin-top: 2px;
+        }
+
+        .refresh-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .updated {
+            font-size: 11px;
+            color: var(--text-faint);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .refresh-btn {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Inter', sans-serif;
+            transition: all .15s;
+        }
+
+        .refresh-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-amber);
+        }
+
+        .refresh-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .refresh-btn.spinning svg {
+            animation: spin .6s linear;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        section {
+            margin-bottom: 22px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-faint);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        /* ---------- Current AQI hero ---------- */
+        .hero {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 32px;
+            align-items: center;
+        }
+
+        @media (max-width:680px) {
+            .hero {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+            }
+        }
+
+        .gauge-wrap {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .gauge-wrap svg {
+            transform: rotate(-90deg);
+        }
+
+        .gauge-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            filter: blur(28px);
+            opacity: 0.35;
+            animation: pulseGlow 3.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                opacity: 0.22;
+            }
+
+            50% {
+                opacity: 0.42;
+            }
+        }
+
+        .gauge-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .gauge-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 44px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .gauge-label {
+            font-size: 10.5px;
+            color: var(--text-faint);
+            margin-top: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .hero-info h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .hero-desc {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 10px;
+            max-width: 480px;
+        }
+
+        .hero-guidance {
+            font-size: 12.5px;
+            color: var(--text-faint);
+            line-height: 1.6;
+            max-width: 480px;
+        }
+
+        .hero-guidance b {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .trend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            font-size: 12px;
+            color: var(--c-good);
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* ---------- Pollutants grid ---------- */
+        .pollutant-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width:760px) {
+            .pollutant-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width:420px) {
+            .pollutant-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .pollutant {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 12px;
+            text-align: center;
+        }
+
+        .pollutant-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .pollutant-unit {
+            font-size: 9.5px;
+            color: var(--text-faint);
+            margin-top: 1px;
+        }
+
+        .pollutant-name {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* ---------- Weather row ---------- */
+        .weather-row {
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+        }
+
+        .weather-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .weather-item .wl {
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .weather-item .wv {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* ---------- Chart card ---------- */
+        .chart-card canvas {
+            max-height: 220px;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 26px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat .sl {
+            font-size: 10.5px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat .sv {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 17px;
+            font-weight: 600;
+        }
+
+        /* ---------- Forecast cards ---------- */
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+
+        @media (max-width:700px) {
+            .forecast-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .forecast-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .forecast-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--bar-color, var(--c-usg));
+        }
+
+        .fc-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .fc-horizon {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .fc-day {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .fc-category {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .fc-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .fc-value-label {
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-bottom: 16px;
+        }
+
+        .fc-rmse {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .fc-rmse b {
+            color: var(--text-muted);
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* ---------- SHAP ---------- */
+        .shap-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 18px;
+        }
+
+        .shap-tab {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 6px 14px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .shap-tab.active {
+            background: var(--accent-amber);
+            color: #12161C;
+            border-color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .shap-summary {
+            display: flex;
+            gap: 36px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .shap-summary .ss-label {
+            font-size: 10.5px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+
+        .shap-summary .ss-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .shap-bar-row {
+            display: grid;
+            grid-template-columns: 150px 1fr 52px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 9px;
+        }
+
+        .shap-feature {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+        }
+
+        .shap-track {
+            position: relative;
+            height: 16px;
+            background: var(--surface-alt);
+            border-radius: 3px;
+            overflow: visible;
+        }
+
+        .shap-fill {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            border-radius: 3px;
+        }
+
+        .shap-fill.pos {
+            background: linear-gradient(90deg, rgba(226, 103, 59, 0.5), var(--c-unhealthy));
+            left: 50%;
+        }
+
+        .shap-fill.neg {
+            background: linear-gradient(90deg, var(--c-good), rgba(76, 175, 125, 0.5));
+            right: 50%;
+        }
+
+        .shap-center-line {
+            position: absolute;
+            left: 50%;
+            top: -2px;
+            bottom: -2px;
+            width: 1px;
+            background: var(--border);
+        }
+
+        .shap-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .shap-legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 16px;
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .shap-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lg-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 36px;
+            font-size: 11.5px;
+            color: var(--text-faint);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+
+        <header>
+            <div class="brand">
+                <div class="brand-mark">P</div>
+                <div class="brand-text">
+                    <h1>Pearls AQI Predictor</h1>
+                    <p>AI-powered air quality intelligence</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="location" id="headerLocation">Loading...</div>
+                <div class="location-sub" id="headerRegion"></div>
+                <div class="refresh-row">
+                    <span class="updated" id="updatedTime">Updated 12:04 AM</span>
+                    <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M21 12a9 9 0 1 1-3-6.7" />
+                            <path d="M21 3v6h-6" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- CURRENT AQI HERO -->
+        <section>
+            <div class="section-label">Current Air Quality</div>
+            <div class="card hero">
+                <div class="gauge-wrap">
+                    <div class="gauge-glow" id="gaugeGlow" style="background:var(--c-usg);"></div>
+                    <svg width="200" height="200" viewBox="0 0 200 200">
+                        <circle cx="100" cy="100" r="86" fill="none" stroke="var(--surface-alt)" stroke-width="14" />
+                        <circle id="gaugeArc" cx="100" cy="100" r="86" fill="none" stroke="var(--c-usg)"
+                            stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35"
+                            stroke-dashoffset="540.35" />
+                    </svg>
+                    <div class="gauge-center">
+                        <div class="gauge-value" id="gaugeValue" style="color:var(--c-usg);">113</div>
+                        <div class="gauge-label">AQI · 10:00 PM</div>
+                    </div>
+                </div>
+                <div class="hero-info">
+                    <h2 id="heroTitle">Air Quality</h2>
+                    <div class="status-pill" style="background:rgba(232,163,61,0.14); color:var(--c-usg);">
+                        <span class="status-dot" style="background:var(--c-usg);"></span>
+                        Unhealthy for Sensitive Groups
+                    </div>
+                    <p class="hero-desc">Current air quality conditions are within a range that most people will not
+                        notice, but sensitive groups should stay alert.</p>
+                    <p class="hero-guidance"><b>Health guidance:</b> Sensitive groups may experience health effects.
+                        General public is less likely to be affected.</p>
+                    <div class="trend-chip" id="trendChip">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="3">
+                            <path d="M3 17l6-6 4 4 8-8" />
+                            <path d="M17 7h4v4" />
+                        </svg>
+                        <span id="trendChipText">Stable · 0 points vs. previous reading</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- POLLUTANTS -->
+        <section>
+            <div class="section-label">Current Pollutants</div>
+            <div class="card">
+                <div class="pollutant-grid" id="pollutantGrid"></div>
+                <div style="height:1px; background:var(--border); margin:20px 0;"></div>
+                <div class="weather-row" id="weatherRow"></div>
+            </div>
+        </section>
+
+        <!-- 24H TREND -->
+        <section>
+            <div class="section-label">24-Hour AQI Trend</div>
+            <div class="card chart-card">
+                <div class="stat-row">
+                    <div class="stat"><span class="sl">Current</span><span class="sv"
+                            style="color:var(--c-usg);">113</span></div>
+                    <div class="stat"><span class="sl">Avg</span><span class="sv">130</span></div>
+                    <div class="stat"><span class="sl">Min</span><span class="sv" style="color:var(--c-usg);">108</span>
+                    </div>
+                    <div class="stat"><span class="sl">Max</span><span class="sv"
+                            style="color:var(--c-unhealthy);">148</span></div>
+                </div>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </section>
+
+        <!-- 3-DAY FORECAST -->
+        <section>
+            <div class="section-label">AI Air Quality Forecast — Predicted AQI for the next three days</div>
+            <div class="forecast-grid" id="forecastGrid"></div>
+        </section>
+
+        <!-- FORECAST TREND -->
+        <section>
+            <div class="card chart-card">
+                <div class="section-label" style="margin-bottom:16px;">Predicted AQI Trend — Today through 72-hour AI
+                    forecast</div>
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </section>
+
+        <!-- SHAP -->
+        <section>
+            <div class="section-label">Why This Prediction — SHAP feature contributions</div>
+            <div class="card">
+                <div class="shap-tabs">
+                    <div class="shap-tab active" data-h="24h" onclick="setShapHorizon('24h', this)">24h</div>
+                    <div class="shap-tab" data-h="48h" onclick="setShapHorizon('48h', this)">48h</div>
+                    <div class="shap-tab" data-h="72h" onclick="setShapHorizon('72h', this)">72h</div>
+                </div>
+                <div class="shap-summary">
+                    <div>
+                        <div class="ss-label">Predicted AQI</div>
+                        <div class="ss-value" id="shapPred" style="font-size:22px;">117.7</div>
+                    </div>
+                    <div>
+                        <div class="ss-label">Top increase</div>
+                        <div class="ss-value" style="color:var(--c-unhealthy);" id="shapTopInc">Current AQI (+4.71)
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ss-label">Top decrease</div>
+                        <div class="ss-value" style="color:var(--c-good);" id="shapTopDec">PM10 (−1.65)</div>
+                    </div>
+                </div>
+                <div id="shapBars"></div>
+                <div class="shap-legend">
+                    <span><span class="lg-dot" style="background:var(--c-unhealthy);"></span>Increases predicted
+                        AQI</span>
+                    <span><span class="lg-dot" style="background:var(--c-good);"></span>Decreases predicted AQI</span>
+                </div>
+            </div>
+        </section>
+
+        <footer id="siteFooter">Pearls AQI Predictor · AI-powered air quality intelligence</footer>
+    </div>
+
+    <script>
+        const CATS = {
+            good: { label: 'Good', color: 'var(--c-good)', hex: '#4CAF7D', max: 50 },
+            moderate: { label: 'Moderate', color: 'var(--c-moderate)', hex: '#D9C24C', max: 100 },
+            usg: { label: 'Unhealthy for Sensitive Groups', color: 'var(--c-usg)', hex: '#E8A33D', max: 150 },
+            unhealthy: { label: 'Unhealthy', color: 'var(--c-unhealthy)', hex: '#E2673B', max: 200 },
+            very_unhealthy: { label: 'Very Unhealthy', color: 'var(--c-very-unhealthy)', hex: '#A15CC4', max: 300 },
+            hazardous: { label: 'Hazardous', color: 'var(--c-hazardous)', hex: '#8B2E3E', max: 500 },
+        };
+        function catFor(aqi) {
+            if (aqi <= 50) return CATS.good;
+            if (aqi <= 100) return CATS.moderate;
+            if (aqi <= 150) return CATS.usg;
+            if (aqi <= 200) return CATS.unhealthy;
+            if (aqi <= 300) return CATS.very_unhealthy;
+            return CATS.hazardous;
+        }
+
+        let DATA = null;
+
+        function showError() {
+            document.getElementById('headerLocation').textContent = 'Data Not Found';
+            document.getElementById('headerRegion').textContent = '';
+            document.getElementById('heroTitle').textContent = 'Pipeline data missing';
+            const errDiv = document.createElement('div');
+            errDiv.id = 'dataBanner';
+            errDiv.style.cssText = 'background:rgba(226,103,59,0.1); border:1px solid rgba(226,103,59,0.35); color:#E2673B; font-size:13px; padding:12px 16px; border-radius:8px; margin-bottom:18px; font-family:IBM Plex Mono, monospace; line-height:1.6;';
+            errDiv.innerHTML = '⚠️ <b>No dashboard data found.</b><br>Run <code>python aqi/pipeline.py</code> first, then restart the server.';
+            const existingBanner = document.getElementById('dataBanner');
+            if (existingBanner) existingBanner.remove();
+            document.querySelector('header').after(errDiv);
+        }
+
+        async function loadData() {
+            // Try Flask API first (when served via python aqi/app.py)
+            // then fall back to relative static path (when served via python -m http.server)
+            const SOURCES = ['/api/data', '../data/aqi_dashboard_data.json'];
+            for (const src of SOURCES) {
+                try {
+                    const res = await fetch(src, { cache: 'no-store' });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (!json.error) { DATA = json; break; }
+                    }
+                } catch (_) {}
+            }
+            if (!DATA) { showError(); return; }
+            renderAll();
+        }
+
+        // ---------- Gauge ----------
+        function setGauge(aqi) {
+            const c = catFor(aqi);
+            const pct = Math.min(aqi / 500, 1);
+            const circumference = 540.35;
+            document.getElementById('gaugeArc').style.stroke = c.hex;
+            document.getElementById('gaugeArc').style.strokeDashoffset = circumference * (1 - pct);
+            document.getElementById('gaugeValue').textContent = Math.round(aqi);
+            document.getElementById('gaugeValue').style.color = c.hex;
+            document.getElementById('gaugeGlow').style.background = c.hex;
+        }
+
+        let trendChartInstance = null, forecastChartInstance = null;
+
+        function renderAll() {
+            const d = DATA;
+            const cur = d.current;
+            const c = catFor(cur.aqi);
+
+            // Sample-data / data-note banner
+            const existingBanner = document.getElementById('dataBanner');
+            if (existingBanner) existingBanner.remove();
+            if (d.data_note) {
+                const banner = document.createElement('div');
+                banner.id = 'dataBanner';
+                banner.style.cssText = 'background:rgba(232,163,61,0.1); border:1px solid rgba(232,163,61,0.3); color:var(--accent-amber); font-size:12px; padding:8px 14px; border-radius:8px; margin-bottom:18px; font-family:IBM Plex Mono, monospace;';
+                banner.textContent = '🤖 ' + d.data_note;
+                document.querySelector('header').after(banner);
+            }
+
+            // Header / location
+            const locName = d.location?.name || 'Your City';
+            const locRegion = d.location?.region || '';
+            const locCountry = d.location?.country || '';
+            document.getElementById('headerLocation').textContent = `${locName}, ${locRegion}`;
+            document.getElementById('headerRegion').textContent = locCountry;
+            document.getElementById('heroTitle').textContent = `${locName} Air Quality`;
+            document.getElementById('siteFooter').textContent = `Pearls AQI Predictor · AI-powered air quality intelligence for ${locName}, ${locRegion}`;
+            document.getElementById('updatedTime').textContent = 'Updated ' + new Date(d.updated_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Gauge + status
+            setGauge(cur.aqi);
+            document.querySelector('.gauge-label').textContent = `AQI · ${new Date(cur.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            document.querySelector('.status-pill').style.background = c.hex + '24';
+            document.querySelector('.status-pill').style.color = c.hex;
+            document.querySelector('.status-dot').style.background = c.hex;
+            document.querySelector('.status-pill').lastChild.textContent = ' ' + c.label;
+
+            // Pollutants
+            const p = cur.pollutants;
+            const pollutants = [
+                { name: 'PM2.5', val: p.pm25, unit: 'μg/m³' },
+                { name: 'PM10', val: p.pm10, unit: 'μg/m³' },
+                p.ozone != null && { name: 'O₃', val: p.ozone, unit: 'μg/m³' },
+                p.no2 != null && { name: 'NO₂', val: p.no2, unit: 'μg/m³' },
+                p.so2 != null && { name: 'SO₂', val: p.so2, unit: 'μg/m³' },
+                p.co != null && { name: 'CO', val: p.co, unit: 'μg/m³' },
+            ].filter(Boolean);
+            document.getElementById('pollutantGrid').innerHTML = pollutants.map(pt => `
+    <div class="pollutant">
+      <div class="pollutant-val">${pt.val}</div>
+      <div class="pollutant-unit">${pt.unit}</div>
+      <div class="pollutant-name">${pt.name}</div>
+    </div>`).join('');
+
+            const w = cur.weather;
+            document.getElementById('weatherRow').innerHTML = [
+                { label: 'Temperature', val: `${w.temperature}°C` },
+                { label: 'Humidity', val: `${w.humidity}%` },
+                { label: 'Pressure', val: `${w.pressure} hPa` },
+            ].map(wt => `<div class="weather-item"><span class="wl">${wt.label}</span><span class="wv">${wt.val}</span></div>`).join('');
+
+            // 24h trend
+            const trend = d.trend_24h || [];
+            const trendLabels = trend.map(t => t._label || new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+            const trendVals = trend.map(t => t.aqi);
+            const avg = trendVals.length ? (trendVals.reduce((a, b) => a + b, 0) / trendVals.length) : 0;
+            document.querySelectorAll('.stat-row .sv')[0].textContent = Math.round(cur.aqi);
+            document.querySelectorAll('.stat-row .sv')[0].style.color = c.hex;
+            document.querySelectorAll('.stat-row .sv')[1].textContent = avg.toFixed(0);
+            document.querySelectorAll('.stat-row .sv')[2].textContent = trendVals.length ? Math.min(...trendVals) : '—';
+            document.querySelectorAll('.stat-row .sv')[3].textContent = trendVals.length ? Math.max(...trendVals) : '—';
+
+            // Trend chip: current vs. previous reading
+            if (trendVals.length >= 2) {
+                const prev = trendVals[trendVals.length - 2];
+                const delta = Math.round(cur.aqi - prev);
+                const dir = delta < 0 ? 'Improving' : delta > 0 ? 'Worsening' : 'Stable';
+                const dirColor = delta < 0 ? 'var(--c-good)' : delta > 0 ? 'var(--c-unhealthy)' : 'var(--text-muted)';
+                document.getElementById('trendChipText').textContent = `${dir} · ${Math.abs(delta)} points vs. previous reading`;
+                document.getElementById('trendChip').style.color = dirColor;
+            }
+
+            if (trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(document.getElementById('trendChart'), {
+                type: 'line',
+                data: {
+                    labels: trendLabels, datasets: [{
+                        data: trendVals, borderColor: '#E8A33D', borderWidth: 2.5, pointRadius: 0,
+                        tension: 0.35, fill: true,
+                        backgroundColor: (ctx) => {
+                            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+                            g.addColorStop(0, 'rgba(232,163,61,0.25)'); g.addColorStop(1, 'rgba(232,163,61,0)');
+                            return g;
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 10 } } },
+                        y: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 10 } } }
+                    }
+                }
+            });
+            document.getElementById('trendChart').parentElement.style.height = '240px';
+
+            // Forecast cards
+            const forecast = d.forecast || [];
+            document.getElementById('forecastGrid').innerHTML = forecast.map(f => {
+                const fc = catFor(f.predicted_aqi);
+                return `<div class="forecast-card" style="--bar-color:${fc.hex};">
+      <div class="fc-top"><span class="fc-horizon">${f.horizon}</span><span class="fc-day">${f.day}</span></div>
+      <div class="fc-category" style="color:${fc.hex};">${fc.label}</div>
+      <div class="fc-value" style="color:${fc.hex};">${f.predicted_aqi}</div>
+      <div class="fc-value-label">predicted AQI</div>
+      <div class="fc-rmse"><span>Model RMSE</span><b>±${f.rmse_aqi ?? '—'}</b></div>
+    </div>`;
+            }).join('');
+
+            // Forecast trend chart
+            const fcLabels = ['Today', ...forecast.map(f => f.horizon)];
+            const fcVals = [cur.aqi, ...forecast.map(f => f.predicted_aqi)];
+            if (forecastChartInstance) forecastChartInstance.destroy();
+            forecastChartInstance = new Chart(document.getElementById('forecastChart'), {
+                type: 'line',
+                data: {
+                    labels: fcLabels, datasets: [{
+                        data: fcVals, borderColor: '#E2673B', borderWidth: 2.5, pointRadius: 5,
+                        pointBackgroundColor: '#E2673B', tension: 0.3, fill: true,
+                        backgroundColor: (ctx) => {
+                            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+                            g.addColorStop(0, 'rgba(226,103,59,0.22)'); g.addColorStop(1, 'rgba(226,103,59,0)');
+                            return g;
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 11 } } },
+                        y: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 10 } } }
+                    }
+                }
+            });
+            document.getElementById('forecastChart').parentElement.querySelector('canvas').style.height = '220px';
+
+            // SHAP
+            window._shapForecast = forecast;
+            renderShap(forecast[0]?.horizon || '24h');
+        }
+
+        function renderShap(horizon) {
+            const f = (window._shapForecast || []).find(x => x.horizon === horizon);
+            if (!f) return;
+            document.getElementById('shapPred').textContent = f.predicted_aqi;
+            const feats = f.features || [];
+            const sortedByVal = [...feats].sort((a, b) => b.value - a.value);
+            const top = sortedByVal[0], bottom = sortedByVal[sortedByVal.length - 1];
+            document.getElementById('shapTopInc').textContent = top ? `${top.name} (${top.value >= 0 ? '+' : ''}${top.value.toFixed(2)})` : '—';
+            document.getElementById('shapTopDec').textContent = bottom ? `${bottom.name} (${bottom.value.toFixed(2)})` : '—';
+
+            const maxAbs = Math.max(...feats.map(x => Math.abs(x.value)), 0.01);
+            document.getElementById('shapBars').innerHTML = feats.map(x => {
+                const pct = (Math.abs(x.value) / maxAbs) * 48;
+                const isPos = x.value >= 0;
+                return `<div class="shap-bar-row">
+      <div class="shap-feature">${x.name}</div>
+      <div class="shap-track">
+        <div class="shap-center-line"></div>
+        <div class="shap-fill ${isPos ? 'pos' : 'neg'}" style="width:${pct}%;"></div>
+      </div>
+      <div class="shap-val" style="text-align:${isPos ? 'left' : 'right'}; color:${isPos ? '#E2673B' : '#4CAF7D'};">${isPos ? '+' : ''}${x.value.toFixed(2)}</div>
+    </div>`;
+            }).join('');
+        }
+
+        function setShapHorizon(h, el) {
+            document.querySelectorAll('.shap-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderShap(h);
+        }
+
+        // ---------- Refresh ----------
+        function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            btn.classList.add('spinning');
+            loadData().finally(() => {
+                setTimeout(() => btn.classList.remove('spinning'), 400);
+            });
+        }
+
+        loadData();
+    </script>
+</body>
+
+</html>

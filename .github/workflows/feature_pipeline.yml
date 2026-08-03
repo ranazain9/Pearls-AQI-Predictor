@@ -1,0 +1,35 @@
+name: Feature Pipeline (Hourly)
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # every hour
+  workflow_dispatch:
+
+jobs:
+  feature-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/requirements.txt
+
+      - name: Run feature pipeline
+        env:
+          AQICN_API_TOKEN: ${{ secrets.AQICN_API_TOKEN }}
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+        run: python pipelines/feature_pipeline.py --upload
+
+      - name: Upload feature artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aqi-features
+          path: data/lahore_aqi_historical_2024_onwards.csv
+          if-no-files-found: warn
