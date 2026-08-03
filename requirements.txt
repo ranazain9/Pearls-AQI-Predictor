@@ -1,19 +1,13 @@
-# Machine Learning & Modeling
+# Machine Learning & Data Processing
 scikit-learn
 pandas
 numpy
-matplotlib
-seaborn
+xgboost
+lightgbm
 
-# Model Interpretation
-shap
-
-# Web Dashboard & API
-streamlit
+# Web Backend
 flask
-
-# Deep Learning
-tensorflow
+gunicorn
 
 # APIs & Feature Store
 requests
