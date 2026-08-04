@@ -32,11 +32,10 @@ jobs:
       - name: Run feature pipeline
         env:
           AQICN_API_TOKEN: ${{ secrets.AQICN_API_TOKEN }}
-          OPEN_METEO_URL: ${{ vars.OPEN_METEO_URL }}   # optional override
-        run: python pipelines/feature_pipeline.py
-        # Note: --upload flag is omitted intentionally.
-        # hopsworks SDK is unavailable on public PyPI (hsfs>=3.7.0 missing).
-        # Data is persisted via the CSV commit step below instead.
+          OPEN_METEO_URL: ${{ vars.OPEN_METEO_URL }}
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+        run: python pipelines/feature_pipeline.py --upload
+        
 
       # ── Commit the updated CSV back to the repo ───────────────────────────
       - name: Commit updated feature CSV

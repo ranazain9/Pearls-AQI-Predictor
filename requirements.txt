@@ -12,4 +12,7 @@ gunicorn
 # APIs & Feature Store
 requests
 python-dotenv
-hopsworks[python]>=4.0
+# Hopsworks 5.x supports Python >=3.10,<3.14. For Feature Store Delta/HDFS
+# insertion, use Linux or WSL (Python 3.11 or 3.12 recommended); native Windows
+# supports local processing/CSV persistence but not this remote write transport.
+hopsworks[python]>=5.0,<6.0

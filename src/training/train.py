@@ -38,7 +38,7 @@ def load_training_data() -> pd.DataFrame:
             import hopsworks
             project = hopsworks.login(api_key_value=hopsworks_key)
             fs = project.get_feature_store()
-            fg = fs.get_feature_group("lahore_aqi_features", version=1)
+            fg = fs.get_feature_group("lahore_aqi_features", version=2)
             df = fg.read()
             if len(df) > 0:
                 print("Loaded dataset from Hopsworks Feature Store.")

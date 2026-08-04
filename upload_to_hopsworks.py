@@ -28,12 +28,11 @@ except ImportError:
         "          See: https://github.com/logicalclocks/hopsworks-api/issues\n"
     )
 
-from src.features.engineering import clean_features_df
-from src.config import (
-    FEATURE_GROUP_NAME,
-    FEATURE_GROUP_VERSION,
-    TARGET_COLUMN,
-    FEATURE_COLUMNS,
+from src.features.pipeline import (
+    _prepare_hopsworks_dataframe,
+    _resolve_feature_group,
+    _upload_on_windows,
+    _uses_windows_hopsworks_transport,
 )
 
 # ── Load environment variables ────────────────────────────────────────────────
@@ -59,12 +58,7 @@ print(f"Using dataset: {file_path}")
 df = pd.read_csv(file_path)
 
 print("Preprocessing dataset and removing NaNs...")
-clean = clean_features_df(df)
-cols_to_upload = ["timestamp", TARGET_COLUMN] + [
-    c for c in FEATURE_COLUMNS if c in clean.columns
-]
-clean = clean[cols_to_upload].copy()
-clean["timestamp"] = pd.to_datetime(clean["timestamp"])
+clean = _prepare_hopsworks_dataframe(df)
 
 print(f"Dataset preprocessed: {len(clean)} clean rows.")
 print(f"Columns  : {list(clean.columns)}")
@@ -77,21 +71,13 @@ if HOPSWORKS_AVAILABLE and hopsworks_api_key:
     fs = project.get_feature_store()
 
     print("\n--- Step 3: Creating / Updating Feature Group ---")
-    print("\n--- Step 3: Creating / Updating Feature Group ---")
-    aqi_fg = fs.get_or_create_feature_group(
-        name=FEATURE_GROUP_NAME,
-        version=FEATURE_GROUP_VERSION,
-        primary_key=["timestamp"],
-        description=(
-            "Lahore AQI dataset with 17 clean features "
-            "(weather, pollutants, lags) and us_aqi target."
-        ),
-        event_time="timestamp",
-        time_travel_format="HUDI",
-    )
+    aqi_fg = _resolve_feature_group(fs)
 
     print(f"Uploading {len(clean)} rows to Hopsworks… (this may take a few minutes)")
-    aqi_fg.insert(clean)
+    if _uses_windows_hopsworks_transport():
+        _upload_on_windows(aqi_fg, clean)
+    else:
+        aqi_fg.insert(clean)
     print("\n✅ Success! Historical dataset uploaded to Hopsworks Feature Store!")
 
 else:
