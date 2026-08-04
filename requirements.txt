@@ -5,6 +5,9 @@ numpy
 xgboost
 lightgbm
 
+deltalake
+hops-deltalake
+
 # Web Backend
 flask
 gunicorn
