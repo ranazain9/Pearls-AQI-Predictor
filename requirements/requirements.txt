@@ -10,6 +10,9 @@ seaborn
 # Model Interpretation
 shap
 
+deltalake
+hops-deltalake
+
 # Web Dashboard & API
 flask
 gunicorn
