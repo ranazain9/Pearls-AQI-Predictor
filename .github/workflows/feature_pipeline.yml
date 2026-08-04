@@ -35,6 +35,7 @@ jobs:
           OPEN_METEO_URL: ${{ vars.OPEN_METEO_URL }}
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
         run: python pipelines/feature_pipeline.py --upload
+        
 
       # ── Commit the updated CSV back to the repo ───────────────────────────
       - name: Commit updated feature CSV

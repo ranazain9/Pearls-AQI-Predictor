@@ -60,17 +60,24 @@ def clean_features_df(df: pd.DataFrame) -> pd.DataFrame:
     Preprocess and clean dataframe: compute features, remove NaNs, and ensure target is valid.
     """
     from src.config import FEATURE_COLUMNS, TARGET_COLUMN
+
     featured = compute_features(df)
-    
-    # Drop rows without target if target is expected
+
+    # Drop rows without target
     if TARGET_COLUMN in featured.columns:
         featured = featured.dropna(subset=[TARGET_COLUMN]).reset_index(drop=True)
-    
-    # Ensure all required feature columns exist and drop any remaining NaNs
+
+    # Drop rows with missing feature values
     available_cols = [c for c in FEATURE_COLUMNS if c in featured.columns]
     featured = featured.dropna(subset=available_cols).reset_index(drop=True)
-    return featured
 
+    # Validation
+    print(f"Final dataset shape: {featured.shape}")
+
+    if len(featured) == 0:
+        raise ValueError("No valid rows remain after feature engineering.")
+
+    return featured
 
 
 def aqi_category(aqi: float) -> str:

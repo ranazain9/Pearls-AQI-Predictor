@@ -255,31 +255,20 @@ def _upload_to_hopsworks(df: pd.DataFrame) -> None:
                 fg.insert(clean)
             return
         except Exception as error:
-            is_transient = _is_transient_hopsworks_transport_error(error)
-            is_native = _is_native_hopsworks_transport_error(error)
+            if _is_native_hopsworks_transport_error(error):
+                raise RuntimeError(
+                    "Local feature and historical CSV files were saved, but "
+                    "Hopsworks synchronization failed because its Delta/HDFS "
+                    "transport is not supported by the installed native Windows "
+                    "packages. Run the upload under Linux or WSL with a "
+                    "Hopsworks-supported Python version (preferably Python 3.11 "
+                    "or 3.12)."
+                ) from error
 
-            if not is_transient:
-                if is_native:
-                    raise RuntimeError(
-                        "Local feature and historical CSV files were saved, but "
-                        "Hopsworks synchronization failed because its Delta/HDFS "
-                        "transport is not supported by the installed native Windows "
-                        "packages. Run the upload under Linux or WSL with a "
-                        "Hopsworks-supported Python version (preferably Python 3.11 "
-                        "or 3.12)."
-                    ) from error
+            if not _is_transient_hopsworks_transport_error(error):
                 raise
 
             if attempt == _HOPSWORKS_UPLOAD_MAX_ATTEMPTS:
-                if is_native:
-                    raise RuntimeError(
-                        "Local feature and historical CSV files were saved, but "
-                        "Hopsworks synchronization failed because its Delta/HDFS "
-                        "transport is not supported by the installed native Windows "
-                        "packages. Run the upload under Linux or WSL with a "
-                        "Hopsworks-supported Python version (preferably Python 3.11 "
-                        "or 3.12)."
-                    ) from error
                 raise
 
             retry_delay = _HOPSWORKS_UPLOAD_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
