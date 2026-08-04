@@ -12,6 +12,9 @@ shap
 
 deltalake
 hops-deltalake
+# Delta support required by Hopsworks time travel format
+delta-spark
+pyarrow
 
 # Web Dashboard & API
 flask
