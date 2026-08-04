@@ -5,6 +5,13 @@ numpy
 xgboost
 lightgbm
 
+deltalake
+hops-deltalake
+# Delta support required by Hopsworks time travel format
+delta-spark
+pyarrow
+hopsworks
+
 # Web Backend
 flask
 gunicorn
@@ -12,7 +19,11 @@ gunicorn
 # APIs & Feature Store
 requests
 python-dotenv
+<<<<<<< HEAD
 # Hopsworks 5.x supports Python >=3.10,<3.14. For Feature Store Delta/HDFS
 # insertion, use Linux or WSL (Python 3.11 or 3.12 recommended); native Windows
 # supports local processing/CSV persistence but not this remote write transport.
 hopsworks[python]>=5.0,<6.0
+=======
+hopsworks[python]>=4.0
+>>>>>>> 7052d3976292e1213b61748978a0452ac4290a71

@@ -10,6 +10,12 @@ seaborn
 # Model Interpretation
 shap
 
+deltalake
+hops-deltalake
+# Delta support required by Hopsworks time travel format
+delta-spark
+pyarrow
+hopsworks
 # Web Dashboard & API
 flask
 gunicorn
