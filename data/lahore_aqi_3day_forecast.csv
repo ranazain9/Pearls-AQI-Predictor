@@ -1,73 +1,73 @@
 timestamp,predicted_pm25,predicted_aqi,category,date
-2026-08-02 00:00:00,54.5,148,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 01:00:00,52.7,143,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 02:00:00,37.7,107,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 03:00:00,34.2,98,Moderate,2026-08-02
-2026-08-02 04:00:00,32.8,94,Moderate,2026-08-02
-2026-08-02 05:00:00,33.6,96,Moderate,2026-08-02
-2026-08-02 06:00:00,33.7,97,Moderate,2026-08-02
-2026-08-02 07:00:00,33.5,96,Moderate,2026-08-02
-2026-08-02 08:00:00,33.5,96,Moderate,2026-08-02
-2026-08-02 09:00:00,33.5,96,Moderate,2026-08-02
-2026-08-02 10:00:00,33.6,96,Moderate,2026-08-02
-2026-08-02 11:00:00,33.4,96,Moderate,2026-08-02
-2026-08-02 12:00:00,33.8,97,Moderate,2026-08-02
-2026-08-02 13:00:00,36.6,104,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 14:00:00,40.7,114,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 15:00:00,43.8,121,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 16:00:00,47.7,131,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 17:00:00,55.2,149,Unhealthy for Sensitive Groups,2026-08-02
-2026-08-02 18:00:00,58.1,152,Unhealthy,2026-08-02
-2026-08-02 19:00:00,60.2,153,Unhealthy,2026-08-02
-2026-08-02 20:00:00,59.8,153,Unhealthy,2026-08-02
-2026-08-02 21:00:00,62.1,154,Unhealthy,2026-08-02
-2026-08-02 22:00:00,64.9,156,Unhealthy,2026-08-02
-2026-08-02 23:00:00,68.8,158,Unhealthy,2026-08-02
-2026-08-03 00:00:00,68.1,157,Unhealthy,2026-08-03
-2026-08-03 01:00:00,60.2,153,Unhealthy,2026-08-03
-2026-08-03 02:00:00,54.8,149,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 03:00:00,45.5,126,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 04:00:00,41.7,116,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 05:00:00,40.9,114,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 06:00:00,40.3,113,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 07:00:00,40.4,113,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 08:00:00,39.9,112,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 09:00:00,39.9,112,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 10:00:00,39.1,110,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 11:00:00,39.3,110,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 12:00:00,40.6,113,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 13:00:00,41.9,117,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 14:00:00,46.6,128,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 15:00:00,49.9,136,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 16:00:00,53.1,144,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 17:00:00,54.0,147,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 18:00:00,54.9,149,Unhealthy for Sensitive Groups,2026-08-03
-2026-08-03 19:00:00,57.6,152,Unhealthy,2026-08-03
-2026-08-03 20:00:00,57.3,152,Unhealthy,2026-08-03
-2026-08-03 21:00:00,60.7,154,Unhealthy,2026-08-03
-2026-08-03 22:00:00,59.2,153,Unhealthy,2026-08-03
-2026-08-03 23:00:00,59.5,153,Unhealthy,2026-08-03
-2026-08-04 00:00:00,60.2,153,Unhealthy,2026-08-04
-2026-08-04 01:00:00,63.8,155,Unhealthy,2026-08-04
-2026-08-04 02:00:00,62.8,155,Unhealthy,2026-08-04
-2026-08-04 03:00:00,55.3,150,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 04:00:00,48.7,134,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 05:00:00,46.4,128,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 06:00:00,47.3,130,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 07:00:00,46.9,129,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 08:00:00,43.6,121,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 09:00:00,40.3,113,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 10:00:00,39.1,110,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 11:00:00,39.0,110,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 12:00:00,40.4,113,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 13:00:00,41.4,116,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 14:00:00,42.9,119,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 15:00:00,46.5,128,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 16:00:00,48.8,134,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 17:00:00,53.0,144,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 18:00:00,53.6,145,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 19:00:00,52.2,142,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 20:00:00,49.5,135,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 21:00:00,40.8,114,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 22:00:00,41.7,116,Unhealthy for Sensitive Groups,2026-08-04
-2026-08-04 23:00:00,56.2,151,Unhealthy,2026-08-04
+2026-08-03 00:00:00,63.12,126.2,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 01:00:00,63.08,126.2,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 02:00:00,63.07,126.1,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 03:00:00,63.46,126.9,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 04:00:00,64.59,129.2,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 05:00:00,64.54,129.1,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 06:00:00,65.58,131.2,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 07:00:00,65.89,131.8,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 08:00:00,65.03,130.1,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 09:00:00,65.51,131.0,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 10:00:00,66.1,132.2,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 11:00:00,68.14,136.3,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 12:00:00,68.44,136.9,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 13:00:00,68.9,137.8,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 14:00:00,69.8,139.6,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 15:00:00,71.27,142.5,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 16:00:00,72.26,144.5,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 17:00:00,81.51,163.0,Unhealthy,2026-08-03
+2026-08-03 18:00:00,85.13,170.3,Unhealthy,2026-08-03
+2026-08-03 19:00:00,83.64,167.3,Unhealthy,2026-08-03
+2026-08-03 20:00:00,76.69,153.4,Unhealthy,2026-08-03
+2026-08-03 21:00:00,77.38,154.8,Unhealthy,2026-08-03
+2026-08-03 22:00:00,66.93,133.9,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-03 23:00:00,65.92,131.8,Unhealthy for Sensitive Groups,2026-08-03
+2026-08-04 00:00:00,59.95,119.9,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 01:00:00,60.58,121.2,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 02:00:00,61.09,122.2,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 03:00:00,60.72,121.4,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 04:00:00,60.58,121.2,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 05:00:00,61.74,123.5,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 06:00:00,62.09,124.2,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 07:00:00,62.57,125.1,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 08:00:00,63.52,127.0,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 09:00:00,64.97,129.9,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 10:00:00,67.15,134.3,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 11:00:00,69.04,138.1,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 12:00:00,70.23,140.5,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 13:00:00,70.79,141.6,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 14:00:00,71.63,143.3,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 15:00:00,71.93,143.9,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 16:00:00,73.07,146.1,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 17:00:00,80.97,161.9,Unhealthy,2026-08-04
+2026-08-04 18:00:00,81.54,163.1,Unhealthy,2026-08-04
+2026-08-04 19:00:00,80.15,160.3,Unhealthy,2026-08-04
+2026-08-04 20:00:00,76.72,153.4,Unhealthy,2026-08-04
+2026-08-04 21:00:00,70.06,140.1,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 22:00:00,62.05,124.1,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-04 23:00:00,59.22,118.4,Unhealthy for Sensitive Groups,2026-08-04
+2026-08-05 00:00:00,57.08,114.2,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 01:00:00,58.34,116.7,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 02:00:00,59.35,118.7,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 03:00:00,59.43,118.9,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 04:00:00,59.66,119.3,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 05:00:00,61.16,122.3,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 06:00:00,61.79,123.6,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 07:00:00,62.09,124.2,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 08:00:00,62.75,125.5,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 09:00:00,63.76,127.5,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 10:00:00,65.31,130.6,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 11:00:00,66.82,133.6,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 12:00:00,67.54,135.1,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 13:00:00,67.92,135.8,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 14:00:00,68.66,137.3,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 15:00:00,69.04,138.1,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 16:00:00,70.26,140.5,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 17:00:00,78.61,157.2,Unhealthy,2026-08-05
+2026-08-05 18:00:00,79.23,158.5,Unhealthy,2026-08-05
+2026-08-05 19:00:00,78.01,156.0,Unhealthy,2026-08-05
+2026-08-05 20:00:00,74.99,150.0,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 21:00:00,69.26,138.5,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 22:00:00,62.55,125.1,Unhealthy for Sensitive Groups,2026-08-05
+2026-08-05 23:00:00,60.34,120.7,Unhealthy for Sensitive Groups,2026-08-05

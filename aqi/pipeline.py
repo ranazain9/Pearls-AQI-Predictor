@@ -1,79 +1,44 @@
+import sys
+from pathlib import Path
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import json
 import warnings
 import numpy as np
 import pandas as pd
 import requests
-import shap
-warnings.filterwarnings("ignore", message="X does not have valid feature names")
-warnings.filterwarnings("ignore", message=".*sklearn.utils.parallel.delayed.*")
-
+import pickle
 from sklearn.ensemble import RandomForestRegressor
+
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except Exception:
+    SHAP_AVAILABLE = False
+    print("WARNING: SHAP not available (numba/numpy conflict). Proceeding without feature explanations.")
 from sklearn.linear_model import Ridge
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 
-try:
-    import tensorflow as tf
-    TF_AVAILABLE = True
-    import os
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-except ImportError:
-    TF_AVAILABLE = False
+warnings.filterwarnings("ignore", message="X does not have valid feature names")
+warnings.filterwarnings("ignore", message=".*sklearn.utils.parallel.delayed.*")
 
-# Akora Khattak, Nowshera, Pakistan
-LATITUDE = 34.0011
-LONGITUDE = 71.9887
-FORECAST_DAYS = 3
-LOCATION_NAME = "Akora Khattak"
-LOCATION_REGION = "Nowshera"
+from src.config import LATITUDE, LONGITUDE, CITY_NAME, FORECAST_HOURS, FEATURE_COLUMNS, FEATURE_LABELS
+
+LOCATION_NAME = CITY_NAME
+LOCATION_REGION = "Punjab"
 LOCATION_COUNTRY = "Pakistan"
 
-# ----------------------------------------------------
-# AQI CALCULATION HELPERS
-# ----------------------------------------------------
-PM25_BREAKPOINTS = [
-    (0.0, 12.0, 0, 50), (12.1, 35.4, 51, 100), (35.5, 55.4, 101, 150),
-    (55.5, 150.4, 151, 200), (150.5, 250.4, 201, 300),
-    (250.5, 350.4, 301, 400), (350.5, 500.4, 401, 500),
-]
-PM10_BREAKPOINTS = [
-    (0, 54, 0, 50), (55, 154, 51, 100), (155, 254, 101, 150),
-    (255, 354, 151, 200), (355, 424, 201, 300),
-    (425, 504, 301, 400), (505, 604, 401, 500),
-]
-
-def calculate_sub_index(concentration, breakpoints):
-    if pd.isna(concentration) or concentration < 0:
-        return None
-    for c_lo, c_hi, i_lo, i_hi in breakpoints:
-        if c_lo <= concentration <= c_hi:
-            return round(((i_hi - i_lo) / (c_hi - c_lo)) * (concentration - c_lo) + i_lo)
-    if concentration > breakpoints[-1][1]:
-        return 500
-    return None
-
-def calculate_aqi(pm25, pm10):
-    vals = [v for v in (calculate_sub_index(pm25, PM25_BREAKPOINTS),
-                         calculate_sub_index(pm10, PM10_BREAKPOINTS)) if v is not None]
-    return max(vals) if vals else None
-
 def aqi_category(aqi):
-    if aqi is None: return "Unknown"
+    if aqi is None or pd.isna(aqi): return "Unknown"
     if aqi <= 50: return "Good"
     if aqi <= 100: return "Moderate"
     if aqi <= 150: return "Unhealthy for Sensitive Groups"
     if aqi <= 200: return "Unhealthy"
     if aqi <= 300: return "Very Unhealthy"
     return "Hazardous"
-
-FEATURE_LABELS = {
-    "temperature": "Temperature", "humidity": "Humidity", "wind_speed": "Wind Speed",
-    "pressure": "Pressure", "hour_sin": "Hour of Day", "hour_cos": "Hour of Day (cos)",
-    "month_sin": "Month", "month_cos": "Month (cos)", "day_of_week": "Day of Week",
-    "pm25_lag_1": "Current AQI", "pm25_lag_24": "Same Hour Yesterday",
-    "pm25_roll_mean_3": "3-Hour Trend", "pm25_roll_mean_6": "6-Hour Trend",
-}
 
 # ----------------------------------------------------
 # STEP 1: Load data & build features
@@ -83,310 +48,173 @@ df = pd.read_csv("data/lahore_aqi_historical_2024_onwards.csv", parse_dates=["ti
 df = df.sort_values("timestamp").reset_index(drop=True)
 print(f"Loaded {len(df)} rows: {df['timestamp'].min()} to {df['timestamp'].max()}")
 
-df["month_sin"] = np.sin(2 * np.pi * df["month"] / 12)
-df["month_cos"] = np.cos(2 * np.pi * df["month"] / 12)
-df["hour_sin"] = np.sin(2 * np.pi * df["hour"] / 24)
-df["hour_cos"] = np.cos(2 * np.pi * df["hour"] / 24)
-df["pm25_roll_mean_3"] = df["ground_pm25"].rolling(3).mean().shift(1)
-df["pm25_roll_mean_6"] = df["ground_pm25"].rolling(6).mean().shift(1)
+from src.features.engineering import clean_features_df, compute_features
+df_featured = clean_features_df(df)
 
-feature_cols = [
-    "temperature", "humidity", "wind_speed", "pressure",
-    "hour_sin", "hour_cos", "month_sin", "month_cos", "day_of_week",
-    "pm25_lag_1", "pm25_lag_24", "pm25_roll_mean_3", "pm25_roll_mean_6",
-]
-target_col = "ground_pm25"
-df_model = df.dropna(subset=feature_cols + [target_col]).reset_index(drop=True)
-print(f"Usable training rows after dropping NaNs: {len(df_model)}")
+# We will train separate models for Day 1 (+24h), Day 2 (+48h), Day 3 (+72h)
+horizons = {24: "day1", 48: "day2", 72: "day3"}
+horizon_data = {}
+
+for h, label in horizons.items():
+    df_h = df_featured.copy()
+    df_h["target_aqi"] = df_h["aqi"].shift(-h)
+    df_h = df_h.dropna(subset=["target_aqi"] + FEATURE_COLUMNS).reset_index(drop=True)
+    horizon_data[label] = df_h
 
 # ----------------------------------------------------
-# STEP 2: Backtest for real per-horizon RMSE & Model Selection
+# STEP 2: Evaluate and Select Models per Horizon
 # ----------------------------------------------------
-print("\n--- STEP 2: Backtesting for per-horizon RMSE and Model Selection ---")
-
-feature_idx = {name: i for i, name in enumerate(feature_cols)}
-
-def build_feature_vector(row, lag_1, lag_24, roll3, roll6):
-    v = np.empty(len(feature_cols))
-    v[feature_idx["temperature"]] = row["temperature"]
-    v[feature_idx["humidity"]] = row["humidity"]
-    v[feature_idx["wind_speed"]] = row["wind_speed"]
-    v[feature_idx["pressure"]] = row["pressure"]
-    v[feature_idx["hour_sin"]] = row["hour_sin"]
-    v[feature_idx["hour_cos"]] = row["hour_cos"]
-    v[feature_idx["month_sin"]] = row["month_sin"]
-    v[feature_idx["month_cos"]] = row["month_cos"]
-    v[feature_idx["day_of_week"]] = row["day_of_week"]
-    v[feature_idx["pm25_lag_1"]] = lag_1
-    v[feature_idx["pm25_lag_24"]] = lag_24
-    v[feature_idx["pm25_roll_mean_3"]] = roll3
-    v[feature_idx["pm25_roll_mean_6"]] = roll6
-    return v
-
-def rollout_72h(df_full_records, model, start_idx, history_dict, max_horizon=72):
-    """Single recursive rollout, returns dict {horizon: predicted_value} for 24/48/72."""
-    sim_history = dict(history_dict)
-    checkpoints = {}
-    n = len(df_full_records)
-    for step in range(1, max_horizon + 1):
-        idx = start_idx + step
-        if idx >= n:
-            break
-        row = df_full_records[idx]
-        ts = row["timestamp"]
-        lag_1 = sim_history.get(ts - pd.Timedelta(hours=1), np.nan)
-        lag_24 = sim_history.get(ts - pd.Timedelta(hours=24), np.nan)
-        if pd.isna(lag_1) or pd.isna(lag_24):
-            break
-        roll3 = np.nanmean([sim_history.get(ts - pd.Timedelta(hours=h), np.nan) for h in range(1, 4)])
-        roll6 = np.nanmean([sim_history.get(ts - pd.Timedelta(hours=h), np.nan) for h in range(1, 7)])
-        vec = build_feature_vector(row, lag_1, lag_24, roll3, roll6)
-        
-        # Fast prediction for TF if it's our TFModelWrapper
-        if hasattr(model, 'fast_predict'):
-            pred = model.fast_predict(vec.reshape(1, -1))[0]
-        else:
-            pred = model.predict(vec.reshape(1, -1))[0]
-            
-        sim_history[ts] = pred
-        if step in (24, 48, 72):
-            checkpoints[step] = pred
-    return checkpoints
-
-class TFModelWrapper:
-    def __init__(self, input_dim):
-        self.scaler = StandardScaler()
-        model = tf.keras.Sequential([
-            tf.keras.layers.Dense(32, activation='relu', input_shape=(input_dim,)),
-            tf.keras.layers.Dense(16, activation='relu'),
-            tf.keras.layers.Dense(1)
-        ])
-        model.compile(optimizer='adam', loss='mse')
-        self.model = model
-        
-    def fit(self, X, y):
-        X_scaled = self.scaler.fit_transform(X)
-        self.model.fit(X_scaled, y, epochs=15, batch_size=32, verbose=0)
-        return self
-        
-    def predict(self, X):
-        X_scaled = self.scaler.transform(X)
-        return self.model.predict(X_scaled, verbose=0).flatten()
-        
-    def fast_predict(self, X):
-        X_scaled = self.scaler.transform(X)
-        return self.model(X_scaled, training=False).numpy().flatten()
-
-# Split for backtesting
-split_idx = int(len(df_model) * 0.85)
-train_df = df_model.iloc[:split_idx]
-test_df = df_model.iloc[split_idx:].reset_index(drop=True)
-
-models_to_evaluate = {
-    "Random Forest": RandomForestRegressor(n_estimators=120, max_depth=14, random_state=42, n_jobs=1),
-    "Ridge Regression": Pipeline([('scaler', StandardScaler()), ('ridge', Ridge(alpha=1.0))]),
-}
-
-if TF_AVAILABLE:
-    models_to_evaluate["Deep Learning (TF)"] = TFModelWrapper(input_dim=len(feature_cols))
-
-full_history = df_model.set_index("timestamp")[target_col].to_dict()
-df_model_records = df_model.to_dict("records")
-ts_to_idx = {r["timestamp"]: i for i, r in enumerate(df_model_records)}
-
-stride = max(len(test_df) // 40, 12)
-sample_points = list(range(0, max(len(test_df) - 73, 0), stride))
-print(f"Evaluating {len(sample_points)} backtest rollout points per model...")
-
-best_model_name = None
-best_model_rmse = float('inf')
-best_aqi_rmse_by_horizon = {}
+print("\n--- STEP 2: Evaluating models for each horizon ---")
+best_models = {}
+best_scalers = {}
 best_rmse_by_horizon = {}
+best_model_names = {}
 
-def pm25_rmse_to_aqi_rmse(pm25_rmse, typical_pm25):
-    if pm25_rmse is None:
-        return None
-    for c_lo, c_hi, i_lo, i_hi in PM25_BREAKPOINTS:
-        if c_lo <= typical_pm25 <= c_hi:
-            slope = (i_hi - i_lo) / (c_hi - c_lo)
-            return round(pm25_rmse * slope, 2)
-    return round(pm25_rmse, 2)
-
-typical_pm25 = df_model[target_col].tail(500).mean()
-
-for name, model in models_to_evaluate.items():
-    print(f"\nTraining {name} on backtest split...")
-    model.fit(train_df[feature_cols].values, train_df[target_col].values)
+for h, label in horizons.items():
+    print(f"\n--- Horizon: +{h}h ({label}) ---")
+    data = horizon_data[label]
+    split_idx = int(len(data) * 0.85)
     
-    horizon_errors = {24: [], 48: [], 72: []}
-    for idx_count, i in enumerate(sample_points):
-        if idx_count > 0 and idx_count % 15 == 0:
-            print(f"  ...processed {idx_count}/{len(sample_points)} rollouts")
+    train_df = data.iloc[:split_idx]
+    test_df = data.iloc[split_idx:].reset_index(drop=True)
+    
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(train_df[FEATURE_COLUMNS])
+    y_train = train_df["target_aqi"].values
+    
+    X_test = scaler.transform(test_df[FEATURE_COLUMNS])
+    y_test = test_df["target_aqi"].values
+    
+    models_to_evaluate = {
+        "Random Forest": RandomForestRegressor(n_estimators=30, max_depth=8, random_state=42, n_jobs=1),
+        "Ridge Regression": Ridge(alpha=10.0)
+    }
+    
+    best_name = None
+    best_rmse = float('inf')
+    best_model = None
+    
+    for name, model in models_to_evaluate.items():
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
+        rmse = np.sqrt(mean_squared_error(y_test, preds))
+        print(f"  {name} RMSE: {rmse:.2f}")
+        
+        if rmse < best_rmse:
+            best_rmse = rmse
+            best_name = name
+            best_model = model
             
-        base_ts = test_df.iloc[i]["timestamp"]
-        base_idx = ts_to_idx.get(base_ts)
-        if base_idx is None:
-            continue
-        seed_history = {ts: v for ts, v in full_history.items() if ts <= base_ts}
-        checkpoints = rollout_72h(df_model_records, model, base_idx, seed_history)
-        for h, pred in checkpoints.items():
-            if base_idx + h < len(df_model_records):
-                actual_ts = df_model_records[base_idx + h]["timestamp"]
-                actual = full_history.get(actual_ts)
-                if actual is not None:
-                    horizon_errors[h].append((pred, actual))
-                    
-    rmse_by_horizon = {}
-    for h, pairs in horizon_errors.items():
-        if pairs:
-            preds, actuals = zip(*pairs)
-            rmse_by_horizon[h] = round(float(np.sqrt(mean_squared_error(actuals, preds))), 2)
-        else:
-            rmse_by_horizon[h] = None
+    print(f"  Selected: {best_name} (RMSE: {best_rmse:.2f})")
     
-    aqi_rmse_by_horizon = {h: pm25_rmse_to_aqi_rmse(v, typical_pm25) for h, v in rmse_by_horizon.items()}
-    avg_rmse = np.mean([v for v in rmse_by_horizon.values() if v is not None])
+    # Train final model on full data for this horizon
+    X_full = scaler.fit_transform(data[FEATURE_COLUMNS])
+    y_full = data["target_aqi"].values
     
-    print(f"  {name} 72h avg RMSE (PM2.5): {avg_rmse:.2f}")
+    final_model = RandomForestRegressor(n_estimators=30, max_depth=8, random_state=42, n_jobs=1) if best_name == "Random Forest" else Ridge(alpha=10.0)
+    final_model.fit(X_full, y_full)
     
-    if avg_rmse < best_model_rmse:
-        best_model_rmse = avg_rmse
-        best_model_name = name
-        best_aqi_rmse_by_horizon = aqi_rmse_by_horizon
-        best_rmse_by_horizon = rmse_by_horizon
+    best_models[label] = final_model
+    best_scalers[label] = scaler
+    best_rmse_by_horizon[h] = round(float(best_rmse), 2)
+    best_model_names[label] = best_name
 
-print(f"\n---> Selected Best Model: {best_model_name} (RMSE: {best_model_rmse:.2f})")
-
-# ----------------------------------------------------
-# STEP 3: Train final model on full dataset
-# ----------------------------------------------------
-print(f"\n--- STEP 3: Training final {best_model_name} on full dataset ---")
-
-if best_model_name == "Random Forest":
-    final_model = RandomForestRegressor(n_estimators=150, max_depth=16, random_state=42, n_jobs=-1)
-elif best_model_name == "Ridge Regression":
-    final_model = Pipeline([('scaler', StandardScaler()), ('ridge', Ridge(alpha=1.0))])
-else:
-    final_model = TFModelWrapper(input_dim=len(feature_cols))
-
-final_model.fit(df_model[feature_cols].values, df_model[target_col].values)
-
-if isinstance(final_model, RandomForestRegressor):
-    final_model.n_jobs = 1
-
-print("Done.")
+# Save final legacy best_model and scaler for API compatibility
+with open("models/best_model_day1.pkl", "wb") as f:
+    pickle.dump(best_models["day1"], f)
+with open("models/scaler_day1.pkl", "wb") as f:
+    pickle.dump({"scaler": best_scalers["day1"], "feature_columns": FEATURE_COLUMNS}, f)
+with open("models/best_model.pkl", "wb") as f:
+    pickle.dump(best_models["day1"], f)
+with open("models/scaler.pkl", "wb") as f:
+    pickle.dump({"scaler": best_scalers["day1"], "feature_columns": FEATURE_COLUMNS}, f)
 
 # ----------------------------------------------------
-# STEP 4: Fetch 3-day weather + pollutant forecasts (LIVE Open-Meteo API)
+# STEP 3: Run forecast + SHAP
 # ----------------------------------------------------
-print("\n--- STEP 4: Fetching live forecast data from Open-Meteo ---")
+print("\n--- STEP 3: Generating predictions & SHAP ---")
 
-weather_res = requests.get("https://api.open-meteo.com/v1/forecast", params={
-    "latitude": LATITUDE, "longitude": LONGITUDE,
-    "hourly": "temperature_2m,relative_humidity_2m,wind_speed_10m,surface_pressure",
-    "forecast_days": FORECAST_DAYS, "timezone": "UTC"
-})
-weather_res.raise_for_status()
-wd = weather_res.json()["hourly"]
-df_weather_fc = pd.DataFrame({
-    "timestamp": pd.to_datetime(wd["time"]), "temperature": wd["temperature_2m"],
-    "humidity": wd["relative_humidity_2m"], "wind_speed": wd["wind_speed_10m"],
-    "pressure": wd["surface_pressure"],
-})
-
-aq_res = requests.get("https://air-quality-api.open-meteo.com/v1/air-quality", params={
-    "latitude": LATITUDE, "longitude": LONGITUDE,
-    "hourly": "pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide",
-    "forecast_days": FORECAST_DAYS, "timezone": "UTC"
-})
-aq_res.raise_for_status()
-aqd = aq_res.json()["hourly"]
-df_aq_fc = pd.DataFrame({
-    "timestamp": pd.to_datetime(aqd["time"]), "modeled_pm25": aqd["pm2_5"],
-    "modeled_pm10": aqd["pm10"], "ozone": aqd.get("ozone"),
-    "no2": aqd.get("nitrogen_dioxide"), "so2": aqd.get("sulphur_dioxide"),
-    "co": aqd.get("carbon_monoxide"),
-})
-
-df_forecast = pd.merge(df_weather_fc, df_aq_fc, on="timestamp", how="inner")
-df_forecast = df_forecast[df_forecast["timestamp"] > df["timestamp"].max()].reset_index(drop=True)
-print(f"Live forecast horizon: {len(df_forecast)} hours "
-      f"({df_forecast['timestamp'].min()} to {df_forecast['timestamp'].max()})")
-
-# ----------------------------------------------------
-# STEP 5: Recursive forecast + SHAP at 24h/48h/72h checkpoints
-# ----------------------------------------------------
-print("\n--- STEP 5: Running recursive forecast with SHAP ---")
-
-# Setup SHAP explainer dynamically based on the best model
-if isinstance(final_model, RandomForestRegressor):
-    explainer = shap.TreeExplainer(final_model)
-    def get_shap_vals(X):
-        # TreeExplainer expects DataFrame/2D array, returns list for multi-output or array for single
-        vals = explainer.shap_values(X)
-        if isinstance(vals, list): return vals[0][0]
-        return vals[0]
-else:
-    # KernelExplainer for any other model (Ridge or TF)
-    print("Initializing KernelExplainer (this may take a moment)...")
-    background_data = shap.kmeans(df_model[feature_cols].values, 10)
-    
-    # We need a wrapper function for KernelExplainer that predicts a 2D array
-    if hasattr(final_model, 'fast_predict'):
-        def predict_fn(X):
-            return final_model.model(final_model.scaler.transform(X), training=False).numpy().flatten()
-    else:
-        def predict_fn(X):
-            return final_model.predict(X)
-            
-    explainer = shap.KernelExplainer(predict_fn, background_data)
-    
-    def get_shap_vals(X):
-        # KernelExplainer requires 2D input
-        return explainer.shap_values(X, silent=True)[0]
-
-history = df[["timestamp", target_col]].dropna().set_index("timestamp")[target_col].to_dict()
-
+# We make 72 direct predictions
+latest_time = df_featured["timestamp"].max()
 results = []
 checkpoint_shap = {}
 CHECKPOINTS = {24: "24h", 48: "48h", 72: "72h"}
 
-for step, (_, row) in enumerate(df_forecast.iterrows(), start=1):
-    ts = row["timestamp"]
-    lag_1 = history.get(ts - pd.Timedelta(hours=1), np.nan)
-    lag_24 = history.get(ts - pd.Timedelta(hours=24), np.nan)
-    roll3 = np.nanmean([history.get(ts - pd.Timedelta(hours=h), np.nan) for h in range(1, 4)])
-    roll6 = np.nanmean([history.get(ts - pd.Timedelta(hours=h), np.nan) for h in range(1, 7)])
+# Compute SHAP explainers (only if SHAP is available)
+explainers = {}
+if SHAP_AVAILABLE:
+    for label, model in best_models.items():
+        try:
+            if best_model_names[label] == "Random Forest":
+                explainers[label] = shap.TreeExplainer(model)
+            else:
+                background_data = shap.kmeans(horizon_data[label][FEATURE_COLUMNS].values, 10)
+                explainers[label] = shap.KernelExplainer(model.predict, background_data)
+        except Exception as e:
+            print(f"SHAP explainer failed for {label}: {e}")
 
-    features = pd.DataFrame([{
-        "temperature": row["temperature"], "humidity": row["humidity"],
-        "wind_speed": row["wind_speed"], "pressure": row["pressure"],
-        "hour_sin": np.sin(2 * np.pi * ts.hour / 24), "hour_cos": np.cos(2 * np.pi * ts.hour / 24),
-        "month_sin": np.sin(2 * np.pi * ts.month / 12), "month_cos": np.cos(2 * np.pi * ts.month / 12),
-        "day_of_week": ts.dayofweek, "pm25_lag_1": lag_1, "pm25_lag_24": lag_24,
-        "pm25_roll_mean_3": roll3, "pm25_roll_mean_6": roll6,
-    }])[feature_cols]
+df_featured.index = df_featured["timestamp"]
 
-    if hasattr(final_model, 'fast_predict'):
-        pred_pm25 = final_model.fast_predict(features.values)[0]
+for h in range(1, 73):
+    target_time = latest_time + pd.Timedelta(hours=h)
+    
+    if h <= 24:
+        label = "day1"
+        day_num = 1
+        lookup_time = target_time - pd.Timedelta(hours=24)
+    elif h <= 48:
+        label = "day2"
+        day_num = 2
+        lookup_time = target_time - pd.Timedelta(hours=48)
     else:
-        pred_pm25 = final_model.predict(features.values)[0]
+        label = "day3"
+        day_num = 3
+        lookup_time = target_time - pd.Timedelta(hours=72)
         
-    history[ts] = pred_pm25
-    pred_aqi = calculate_aqi(pred_pm25, row["modeled_pm10"])
-
+    if lookup_time in df_featured.index:
+        feat_row = df_featured.loc[lookup_time]
+        if isinstance(feat_row, pd.DataFrame):
+            feat_row = feat_row.iloc[-1]
+            
+        X_dict = {col: feat_row.get(col, 0.0) for col in FEATURE_COLUMNS}
+        for col in X_dict:
+            if pd.isna(X_dict[col]):
+                X_dict[col] = 0.0
+                
+        X_df = pd.DataFrame([X_dict])[FEATURE_COLUMNS]
+        X_scaled = best_scalers[label].transform(X_df)
+        pred_aqi = float(best_models[label].predict(X_scaled)[0])
+        pred_aqi = max(0.0, pred_aqi)
+    else:
+        pred_aqi = float(df_featured["aqi"].iloc[-1])
+        X_df = pd.DataFrame([{col: 0.0 for col in FEATURE_COLUMNS}])
+        
     results.append({
-        "timestamp": ts.isoformat(), "predicted_pm25": round(float(pred_pm25), 1),
-        "predicted_aqi": pred_aqi, "category": aqi_category(pred_aqi),
+        "timestamp": target_time.isoformat(),
+        "predicted_pm25": round(pred_aqi * 0.5, 2),
+        "predicted_aqi": round(pred_aqi, 1),
+        "category": aqi_category(pred_aqi),
     })
-
-    if step in CHECKPOINTS:
-        shap_vals = get_shap_vals(features.values)
-        feats_sorted = sorted(zip(feature_cols, shap_vals), key=lambda x: abs(x[1]), reverse=True)
-        checkpoint_shap[CHECKPOINTS[step]] = {
-            "predicted_aqi": pred_aqi, "predicted_pm25": round(float(pred_pm25), 1),
-            "rmse_aqi": best_aqi_rmse_by_horizon.get(step),
-            "features": [{"name": FEATURE_LABELS.get(f, f), "value": round(float(v), 2)} for f, v in feats_sorted],
+    
+    if h in CHECKPOINTS:
+        feature_importances = []
+        if SHAP_AVAILABLE and label in explainers:
+            try:
+                if best_model_names[label] == "Random Forest":
+                    shap_vals = explainers[label].shap_values(X_scaled)
+                    if isinstance(shap_vals, list): shap_vals = shap_vals[0]
+                    shap_vals = shap_vals[0]
+                else:
+                    shap_vals = explainers[label].shap_values(X_scaled.reshape(1, -1), silent=True)[0]
+                feats_sorted = sorted(zip(FEATURE_COLUMNS, shap_vals), key=lambda x: abs(x[1]), reverse=True)
+                feature_importances = [{"name": FEATURE_LABELS.get(f, f), "value": round(float(v), 2)} for f, v in feats_sorted]
+            except Exception as e:
+                print(f"SHAP values failed for horizon {h}: {e}")
+        checkpoint_shap[CHECKPOINTS[h]] = {
+            "predicted_aqi": round(pred_aqi, 1),
+            "predicted_pm25": round(pred_aqi * 0.5, 2),
+            "rmse_aqi": best_rmse_by_horizon.get(h),
+            "features": feature_importances,
         }
 
 df_result = pd.DataFrame(results)
@@ -399,25 +227,23 @@ print("\n--- 3-Day Daily AQI Summary ---")
 print(daily_summary)
 
 # ----------------------------------------------------
-# STEP 6: Export dashboard JSON
+# STEP 4: Export dashboard JSON
 # ----------------------------------------------------
-print("\n--- STEP 6: Exporting dashboard JSON ---")
+print("\n--- STEP 4: Exporting dashboard JSON ---")
 
-latest_row = df.dropna(subset=["ground_pm25", "modeled_pm10"]).iloc[-1]
-last_24h = df[df["timestamp"] > latest_row["timestamp"] - pd.Timedelta(hours=24)]
-
-current_aqi_val = calculate_aqi(latest_row["ground_pm25"], latest_row["modeled_pm10"])
+latest_row = df_featured.iloc[-1]
+last_24h = df_featured[df_featured["timestamp"] > latest_row["timestamp"] - pd.Timedelta(hours=24)]
 
 dashboard_data = {
     "location": {"name": LOCATION_NAME, "region": LOCATION_REGION, "country": LOCATION_COUNTRY},
     "updated_at": pd.Timestamp.now().isoformat(),
-    "data_note": f"Powered by Best Model: {best_model_name}",
+    "data_note": f"Powered by Horizon-Specific Models: {best_model_names}",
     "current": {
-        "aqi": current_aqi_val,
-        "category": aqi_category(current_aqi_val),
+        "aqi": float(latest_row["aqi"]),
+        "category": aqi_category(latest_row["aqi"]),
         "timestamp": latest_row["timestamp"].isoformat(),
         "pollutants": {
-            "pm25": round(float(latest_row["ground_pm25"]), 1),
+            "pm25": round(float(latest_row["ground_pm25"]) if pd.notna(latest_row["ground_pm25"]) else float(latest_row["modeled_pm25"]), 1),
             "pm10": round(float(latest_row["modeled_pm10"]), 1),
         },
         "weather": {
@@ -427,16 +253,16 @@ dashboard_data = {
         },
     },
     "trend_24h": [
-        {"timestamp": r["timestamp"].isoformat(), "aqi": calculate_aqi(r["ground_pm25"], r["modeled_pm10"])}
-        for _, r in last_24h.dropna(subset=["ground_pm25", "modeled_pm10"]).iterrows()
+        {"timestamp": r["timestamp"].isoformat(), "aqi": float(r["aqi"])}
+        for _, r in last_24h.iterrows()
     ],
     "forecast": [
         {"horizon": f"{h}h", "day": f"Day {i+1}", **checkpoint_shap[label]}
         for i, (h, label) in enumerate(CHECKPOINTS.items()) if label in checkpoint_shap
     ],
     "forecast_hourly": results,
-    "rmse_by_horizon_pm25": best_rmse_by_horizon,
-    "rmse_by_horizon_aqi": best_aqi_rmse_by_horizon,
+    "rmse_by_horizon_pm25": {},
+    "rmse_by_horizon_aqi": best_rmse_by_horizon,
 }
 
 with open("data/aqi_dashboard_data.json", "w") as f:

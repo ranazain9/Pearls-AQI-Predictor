@@ -16,13 +16,14 @@ sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import pandas as pd
+# pyrefly: ignore [missing-import]
 from flask import Flask, jsonify, request, send_file
 
 from src.alerts import check_aqi_alert, check_forecast_alerts
 from src.config import CITY_NAME, HISTORICAL_CSV, LATITUDE, LONGITUDE, MODELS_DIR
-from src.features.engineering import compute_features, pm25_to_aqi_category, pm25_to_epa_aqi
+from src.features.engineering import compute_features
 from src.features.fetch_raw import fetch_openmeteo_current_row
-from src.inference.predict import predict_next_3_days
+from src.inference.predict import predict_next_3_days, predict_next_3_days_with_shap
 
 app = Flask(__name__)
 FRONTEND = ROOT / "app" / "frontend.html"
@@ -32,28 +33,7 @@ DATA_JSON = ROOT / "data" / "aqi_dashboard_data.json"
 # AQI helpers
 # ─────────────────────────────────────────────
 
-PM25_BREAKPOINTS = [
-    (0.0, 12.0, 0, 50), (12.1, 35.4, 51, 100), (35.5, 55.4, 101, 150),
-    (55.5, 150.4, 151, 200), (150.5, 250.4, 201, 300),
-    (250.5, 350.4, 301, 400), (350.5, 500.4, 401, 500),
-]
-PM10_BREAKPOINTS = [
-    (0, 54, 0, 50), (55, 154, 51, 100), (155, 254, 101, 150),
-    (255, 354, 151, 200), (355, 424, 201, 300),
-    (425, 504, 301, 400), (505, 604, 401, 500),
-]
 
-def _sub_index(conc, bps):
-    if conc is None or (isinstance(conc, float) and np.isnan(conc)):
-        return None
-    for c_lo, c_hi, i_lo, i_hi in bps:
-        if c_lo <= conc <= c_hi:
-            return round(((i_hi - i_lo) / (c_hi - c_lo)) * (conc - c_lo) + i_lo)
-    return 500 if conc > bps[-1][1] else None
-
-def calc_aqi(pm25, pm10=None):
-    vals = [v for v in [_sub_index(pm25, PM25_BREAKPOINTS), _sub_index(pm10, PM10_BREAKPOINTS)] if v is not None]
-    return max(vals) if vals else None
 
 def aqi_category(aqi):
     if aqi is None: return "Unknown"
@@ -74,21 +54,21 @@ def _load_history() -> pd.DataFrame | None:
     df = pd.read_csv(HISTORICAL_CSV, parse_dates=["timestamp"])
     return compute_features(df)
 
-def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict) -> dict:
+def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict, checkpoint_shap: dict = None) -> dict:
     """Assemble the exact JSON structure the frontend expects."""
 
     # Current reading from latest ground truth
-    valid = history.dropna(subset=["ground_pm25"])
+    valid = history.dropna(subset=["aqi"])
     latest = valid.iloc[-1]
-    pm25_now = float(latest["ground_pm25"])
+    pm25_now = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0))
     pm10_now = float(latest.get("modeled_pm10", 0) or 0)
-    aqi_now = calc_aqi(pm25_now, pm10_now)
+    aqi_now = float(latest["aqi"])
 
     # 24h trend
     cutoff = latest["timestamp"] - pd.Timedelta(hours=24)
-    trend_rows = history[history["timestamp"] >= cutoff].dropna(subset=["ground_pm25"])
+    trend_rows = history[history["timestamp"] >= cutoff].dropna(subset=["aqi"])
     trend_24h = [
-        {"timestamp": str(r["timestamp"]), "aqi": calc_aqi(float(r["ground_pm25"]), float(r.get("modeled_pm10") or 0))}
+        {"timestamp": str(r["timestamp"]), "aqi": round(float(r["aqi"]), 1)}
         for _, r in trend_rows.iterrows()
     ]
 
@@ -99,15 +79,26 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
             row = predictions.iloc[h - 1]
             aqi_pred = float(row.get("predicted_aqi", 0))
             pm25_pred = float(row.get("predicted_pm25", 0))
+            
+            day_key = f"day{h // 24}"
+            rmse_val = None
+            if "metrics" in training_meta and day_key in training_meta["metrics"]:
+                best_algo = training_meta.get("best_models", {}).get(day_key)
+                if best_algo and best_algo in training_meta["metrics"][day_key]:
+                    rmse_val = training_meta["metrics"][day_key][best_algo].get("rmse")
+            
+            shap_feats = checkpoint_shap.get(label, []) if checkpoint_shap else []
+
             checkpoints[label] = {
                 "predicted_aqi": round(aqi_pred, 1),
                 "predicted_pm25": round(pm25_pred, 2),
-                "rmse_aqi": None,  # src pipeline doesn't run backtest — shown as N/A in UI
-                "features": [],    # SHAP not run in live API mode for speed
+                "rmse_aqi": round(rmse_val, 1) if rmse_val is not None else None,
+                "features": shap_feats,
             }
 
     # Best model from training_results.json
-    best_model = training_meta.get("best_model", "random_forest").replace("_", " ").title()
+    best_models = training_meta.get("best_models", {})
+    best_model = ", ".join([f"D{i}: {name.replace('_', ' ').title()}" for i, (d, name) in enumerate(best_models.items(), 1)]) if best_models else training_meta.get("best_model", "random_forest").replace("_", " ").title()
 
     return {
         "location": {
@@ -145,8 +136,7 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
             for i, label in enumerate(["24h", "48h", "72h"]) if label in checkpoints
         ],
         "forecast_hourly": predictions.to_dict(orient="records"),
-        "rmse_by_horizon_pm25": {},
-        "rmse_by_horizon_aqi": {},
+        "rmse_by_horizon_aqi": {k.replace("h", ""): v["rmse_aqi"] for k, v in checkpoints.items() if v.get("rmse_aqi") is not None},
     }
 
 # ─────────────────────────────────────────────
@@ -165,7 +155,7 @@ def dashboard_data():
     Falls back to pre-generated file if the model hasn't been trained yet.
     """
     history = _load_history()
-    scaler_exists = (MODELS_DIR / "scaler.pkl").exists()
+    scaler_exists = (MODELS_DIR / "scaler_day1.pkl").exists()
     training_json = MODELS_DIR / "training_results.json"
 
     if history is None or history.empty or not scaler_exists:
@@ -176,9 +166,9 @@ def dashboard_data():
         return jsonify({"error": "No data available. Run aqi/pipeline.py or src/training/train.py first."}), 503
 
     try:
-        predictions = predict_next_3_days(history)
+        predictions, checkpoint_shap = predict_next_3_days_with_shap(history)
         meta = json.loads(training_json.read_text()) if training_json.exists() else {}
-        data = _build_dashboard_json(history, predictions, meta)
+        data = _build_dashboard_json(history, predictions, meta, checkpoint_shap)
         return jsonify(data)
     except Exception as e:
         # Fall back to pre-generated file
@@ -187,12 +177,13 @@ def dashboard_data():
                 return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/api/forecast")
 def forecast_api():
     """Return raw 72-hour PM2.5 + AQI predictions as JSON."""
     history = _load_history()
-    if history is None or not (MODELS_DIR / "scaler.pkl").exists():
-        return jsonify({"error": "Model not trained. Run src/training/train.py first."}), 503
+    if history is None or not (MODELS_DIR / "scaler_day1.pkl").exists():
+        return jsonify({"error": "Model not trained. Run aqi/pipeline.py first."}), 503
     try:
         days = int(request.args.get("days", 3))
         hours = min(days * 24, 72)
@@ -208,14 +199,15 @@ def current_api():
     history = _load_history()
     if history is None or history.empty:
         return jsonify({"error": "No historical data available"}), 404
-    latest = history.dropna(subset=["ground_pm25"]).iloc[-1]
-    pm25 = float(latest["ground_pm25"])
+    latest = history.dropna(subset=["aqi"]).iloc[-1]
+    pm25 = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0))
+    aqi_now = float(latest["aqi"])
     return jsonify({
         "timestamp": str(latest["timestamp"]),
         "pm25": pm25,
-        "aqi": calc_aqi(pm25, float(latest.get("modeled_pm10") or 0)),
-        "category": pm25_to_aqi_category(pm25),
-        "alert": check_aqi_alert(pm25),
+        "aqi": aqi_now,
+        "category": aqi_category(aqi_now),
+        "alert": check_aqi_alert(aqi_now),
     })
 
 @app.route("/api/metrics")

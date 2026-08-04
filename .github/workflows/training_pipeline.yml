@@ -2,16 +2,25 @@ name: Training Pipeline (Daily)
 
 on:
   schedule:
-    - cron: "0 2 * * *"  # daily at 02:00 UTC
-  workflow_dispatch:
+    - cron: "30 2 * * *"   # daily at 02:30 UTC — runs AFTER hourly feature run
+  workflow_dispatch:        # manual trigger from GitHub UI
 
 jobs:
   training-pipeline:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Python
+    permissions:
+      contents: write       # needed to git-push trained models back
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Pull the latest commit (which includes the CSV updated by feature pipeline)
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -21,30 +30,38 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements/requirements.txt
 
-      # Artifacts are scoped to a single workflow run; when none is found,
-      # training falls back to data/lahore_aqi_historical_2024_onwards.csv from checkout.
-      - name: Download latest features (if available)
-        uses: actions/download-artifact@v4
-        with:
-          name: aqi-features
-          path: data/
-        continue-on-error: true
-
+      # ── Verify training data ───────────────────────────────────────────────
       - name: Verify training data exists
         run: |
-          if [ ! -f data/lahore_aqi_historical_2024_onwards.csv ]; then
-            echo "No feature CSV in repo or artifact — run historical_backfill.py or feature pipeline first."
+          if [ -f data/lahore_aqi_historical_2024_onwards.csv ]; then
+            ROWS=$(tail -n +2 data/lahore_aqi_historical_2024_onwards.csv | wc -l)
+            echo "✅ Training data found: $ROWS rows"
+          else
+            echo "❌ No feature CSV found. Run the feature pipeline first."
             exit 1
           fi
 
+      # ── Train models for all 3 horizons ───────────────────────────────────
       - name: Run training pipeline
-        env:
-          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        run: python pipelines/training_pipeline.py --register
+        run: python pipelines/training_pipeline.py
+        # Note: --register flag is omitted (hopsworks SDK unavailable on PyPI).
+        # Models are saved to models/ directory and committed below.
 
+      # ── Commit trained models back to repo ────────────────────────────────
+      - name: Commit trained models
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add models/ || true
+          git diff --cached --quiet || \
+            git commit -m "chore(models): daily model retrain [skip ci]"
+          git push || true
+
+      # ── Also upload as a workflow artifact (available for 30 days) ────────
       - name: Upload model artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: trained-models
+          name: trained-models-${{ github.run_id }}
           path: models/
+          retention-days: 30
           if-no-files-found: warn

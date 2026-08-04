@@ -2,6 +2,8 @@
 scikit-learn
 pandas
 numpy
+xgboost
+lightgbm
 matplotlib
 seaborn
 
@@ -9,10 +11,14 @@ seaborn
 shap
 
 # Web Dashboard & API
-streamlit
 flask
+gunicorn
 
-# APIs & Feature Store
+# APIs & Utilities
 requests
-hopsworks==5.0.0
 python-dotenv
+
+# hopsworks — its dependency `hsfs>=3.7.0` is NOT on public PyPI.
+# Install separately in a Python 3.8–3.12 env if Hopsworks upload is needed:
+#   pip install hopsworks==3.7.0
+# The upload_to_hopsworks.py script falls back to CSV export when unavailable.

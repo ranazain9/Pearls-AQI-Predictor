@@ -2,16 +2,23 @@ name: Feature Pipeline (Hourly)
 
 on:
   schedule:
-    - cron: "0 * * * *"  # every hour
-  workflow_dispatch:
+    - cron: "0 * * * *"   # every hour on the hour (UTC)
+  workflow_dispatch:        # manual trigger from GitHub UI
 
 jobs:
   feature-pipeline:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Set up Python
+    permissions:
+      contents: write       # needed to git-push the updated CSV back
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -21,15 +28,32 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements/requirements.txt
 
+      # ── Run pipeline (saves data/lahore_aqi_historical_2024_onwards.csv) ──
       - name: Run feature pipeline
         env:
           AQICN_API_TOKEN: ${{ secrets.AQICN_API_TOKEN }}
-          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        run: python pipelines/feature_pipeline.py --upload
+          OPEN_METEO_URL: ${{ vars.OPEN_METEO_URL }}   # optional override
+        run: python pipelines/feature_pipeline.py
+        # Note: --upload flag is omitted intentionally.
+        # hopsworks SDK is unavailable on public PyPI (hsfs>=3.7.0 missing).
+        # Data is persisted via the CSV commit step below instead.
 
+      # ── Commit the updated CSV back to the repo ───────────────────────────
+      - name: Commit updated feature CSV
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/lahore_aqi_historical_2024_onwards.csv || true
+          # Only commit when there are actual changes
+          git diff --cached --quiet || \
+            git commit -m "chore(data): hourly feature update [skip ci]"
+          git push || true
+
+      # ── Also upload as a workflow artifact (available for 7 days) ─────────
       - name: Upload feature artifact
         uses: actions/upload-artifact@v4
         with:
-          name: aqi-features
+          name: aqi-features-${{ github.run_id }}
           path: data/lahore_aqi_historical_2024_onwards.csv
+          retention-days: 7
           if-no-files-found: warn

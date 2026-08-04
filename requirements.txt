@@ -11,5 +11,5 @@ gunicorn
 
 # APIs & Feature Store
 requests
-hopsworks==5.0.0
 python-dotenv
+hopsworks[python]>=4.0

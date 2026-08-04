@@ -6,10 +6,7 @@ import pandas as pd
 from pathlib import Path
 from dotenv import load_dotenv
 
-# NOTE: AQI is no longer computed manually. It's fetched directly from
-# Open-Meteo's Air Quality API (the "us_aqi" field), which returns AQI
-# as a precomputed value -- same as any other field like temperature.
-# No custom formula / breakpoint math is applied on our end.
+from src.features.engineering import calculate_aqi_from_pm25
 
 # Reconfigure stdout to UTF-8 to prevent encoding errors on Windows
 if hasattr(sys.stdout, 'reconfigure'):
@@ -25,7 +22,7 @@ if not openaq_key:
 LATITUDE = 31.5204
 LONGITUDE = 74.3587
 RADIUS_METERS = 25000  # 25km search radius
-START_DATE = "2024-01-01"
+START_DATE = "2025-01-01"
 # Set end date as yesterday to get full daily records
 END_DATE = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
@@ -55,6 +52,7 @@ try:
     print(f"Found {len(locations)} locations within 25km of Lahore.")
 
     for loc in locations:
+
         loc_name = loc.get("name", "Unknown Location")
         for s in loc.get("sensors", []):
             if s.get("parameter", {}).get("name") == "pm25":
@@ -172,22 +170,20 @@ except Exception as e:
     sys.exit(1)
 
 # ----------------------------------------------------
-# STEP 4: Fetch Historical Air Quality + AQI from Open-Meteo
+# STEP 4: Fetch Historical Air Quality Estimates from Open-Meteo
 # ----------------------------------------------------
-# NOTE on target vs. features:
-# - "us_aqi" is fetched directly from the API and used as the TARGET.
-#   It is Open-Meteo's own precomputed AQI value -- we do not calculate
-#   AQI ourselves from any breakpoint formula.
-# - modeled_pm25, modeled_pm10, ozone, no2, so2, co are kept ONLY as
-#   INPUT FEATURES for the model.
-print("\n--- STEP 4: Fetching Air Quality Estimates (incl. AQI) from Open-Meteo ---")
+# NOTE: these modeled fields (modeled_pm25, modeled_pm10, ozone, no2, so2, co)
+# are kept ONLY as input features for the model. They must never be used to
+# construct the target/label -- doing so would leak modeled data into the
+# thing the model is trying to predict.
+print("\n--- STEP 4: Fetching Modeled Air Quality Estimates from Open-Meteo ---")
 aq_url = "https://air-quality-api.open-meteo.com/v1/air-quality"
 aq_params = {
     "latitude": LATITUDE,
     "longitude": LONGITUDE,
     "start_date": START_DATE,
     "end_date": END_DATE,
-    "hourly": "pm2_5,pm10,ozone,nitrogen_dioxide,nitrogen_monoxide,sulphur_dioxide,carbon_monoxide,us_aqi",
+    "hourly": "pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide",
     "timezone": "auto"
 }
 
@@ -202,12 +198,10 @@ try:
         "modeled_pm10": aq_data["pm10"],
         "ozone": aq_data.get("ozone", [None] * len(aq_data["time"])),
         "no2": aq_data.get("nitrogen_dioxide", [None] * len(aq_data["time"])),
-        "no": aq_data.get("nitrogen_monoxide", [None] * len(aq_data["time"])),
         "so2": aq_data.get("sulphur_dioxide", [None] * len(aq_data["time"])),
         "co": aq_data.get("carbon_monoxide", [None] * len(aq_data["time"])),
-        "aqi": aq_data.get("us_aqi", [None] * len(aq_data["time"])),  # <-- TARGET, straight from API
     })
-    print(f"Retrieved {len(df_aq_modeled)} hourly air quality + AQI records.")
+    print(f"Retrieved {len(df_aq_modeled)} hourly air quality model estimates.")
 except Exception as e:
     print(f"Failed to fetch air quality model data: {e}")
     sys.exit(1)
@@ -219,7 +213,7 @@ print("\n--- STEP 5: Merging Datasets ---")
 # Merge weather and modeled air quality (both are complete hourly series from Open-Meteo)
 df_merged = pd.merge(df_weather, df_aq_modeled, on="timestamp", how="outer")
 
-# Merge in OpenAQ ground-truth PM2.5 (kept as an input feature, not the target)
+# Merge in OpenAQ ground-truth target values
 df_final = pd.merge(df_merged, df_openaq, on="timestamp", how="left")
 
 # Sort chronologically
@@ -227,37 +221,35 @@ df_final = df_final.sort_values(by="timestamp").reset_index(drop=True)
 
 # Generate Time-based Features
 df_final["hour"] = df_final["timestamp"].dt.hour
-df_final["day"] = df_final["timestamp"].dt.day
 df_final["day_of_week"] = df_final["timestamp"].dt.dayofweek
-df_final["week_of_year"] = df_final["timestamp"].dt.isocalendar().week.astype(int)
 df_final["month"] = df_final["timestamp"].dt.month
 
-# AQI Change Rate: hour-over-hour change in AQI (autoregressive feature).
-# Uses only past values (row t minus row t-1), so it's safe to compute here
-# without leaking future information into any given row.
-df_final["aqi_change_rate"] = df_final["aqi"].diff()
-
 # ----------------------------------------------------
-# TARGET: "aqi" was fetched directly from Open-Meteo's API in Step 4
-# (the "us_aqi" field) -- no manual formula/breakpoint math is applied here.
-# ground_pm25 (real sensor data from OpenAQ) remains available as an
-# INPUT FEATURE, it is not used to build the label.
+# TARGET: AQI computed directly from ground-truth PM2.5 ONLY.
+#
+# This is the label the model will be trained to predict directly.
+# It deliberately does NOT use modeled_pm10 (or any other modeled_* column)
+# -- mixing modeled data into the label would leak model error into the
+# target itself, on top of being the exact problem ("predict PM2.5, then
+# run through the AQI formula") we're avoiding by predicting AQI directly.
+# All modeled_* / weather columns above remain available as INPUT features.
 # ----------------------------------------------------
+df_final["aqi"] = df_final["ground_pm25"].apply(
+    lambda pm25: calculate_aqi_from_pm25(pm25) if pd.notna(pm25) else None
+)
 
-# Check how many missing values exist in relevant columns
+# Check how many missing values exist in the target column
 missing_ground_truth = df_final["ground_pm25"].isna().sum()
-missing_target = df_final["aqi"].isna().sum()
 total_records = len(df_final)
+missing_percentage = (missing_ground_truth / total_records) * 100
+valid_target_records = total_records - missing_ground_truth
 
 print(f"\nMerging complete.")
 print(f"Total historical data points: {total_records} hours")
-print(f"Missing ground-truth PM2.5 readings (feature): {missing_ground_truth} ({missing_ground_truth / total_records * 100:.2f}%)")
-print(f"Missing AQI target values: {missing_target} ({missing_target / total_records * 100:.2f}%)")
+print(f"Missing ground-truth readings: {missing_ground_truth} ({missing_percentage:.2f}%)")
+print(f"Rows with a valid AQI target: {valid_target_records}")
 
 # Save final CSV
-output_path = "data/lahore_aqi_historical_2024_onwards.csv"
+output_path = "data/lahore_aqi_historical.csv"
 df_final.to_csv(output_path, index=False)
-# Also save to secondary path just in case
-secondary_path = "data/lahore_aqi_historical_backfilled.csv"
-df_final.to_csv(secondary_path, index=False)
-print(f"Success! Historical backfill dataset saved to: {output_path} and {secondary_path}")
+print(f"Success! Historical backfill dataset saved to: {output_path}")

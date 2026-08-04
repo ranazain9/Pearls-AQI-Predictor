@@ -1,101 +1,161 @@
-"""Inference: hourly Open-Meteo forecast with aligned lag features."""
+"""Inference: Predict 3-day AQI forecast using separate horizon models."""
 import json
 import pickle
-
 import pandas as pd
-
 from src.config import FORECAST_HOURS, MODELS_DIR, TARGET_COLUMN
-from src.features.engineering import compute_features, pm25_to_aqi_category, pm25_to_epa_aqi
-from src.features.fetch_raw import fetch_openmeteo_forecast
+from src.features.engineering import aqi_category, compute_features
 
-
-def load_model_artifacts() -> tuple[object, dict]:
-    """Load saved scaler and Best Model from disk (Sklearn or TensorFlow)."""
-    with open(MODELS_DIR / "scaler.pkl", "rb") as f:
+def load_horizon_artifacts(day: int) -> tuple[object, dict]:
+    """Load scaler and model for a specific horizon day (1, 2, or 3)."""
+    with open(MODELS_DIR / f"scaler_day{day}.pkl", "rb") as f:
         artifact = pickle.load(f)
 
-    with open(MODELS_DIR / "training_results.json") as f:
-        metadata = json.load(f)
+    pkl_path = MODELS_DIR / f"best_model_day{day}.pkl"
+    if not pkl_path.exists():
+        raise FileNotFoundError(f"Model for Day {day} not found. Run training first.")
+    with open(pkl_path, "rb") as f:
+        model = pickle.load(f)
 
-    deploy_model = metadata.get("deploy_model", "random_forest")
-    
-    if deploy_model == "tensorflow_nn":
-        import tensorflow as tf
-        model = tf.keras.models.load_model(MODELS_DIR / "best_model.keras")
-        artifact["model_type"] = "tensorflow"
-    else:
-        pkl_path = MODELS_DIR / "best_model.pkl"
-        if not pkl_path.exists():
-            raise FileNotFoundError("No trained model found. Run training_pipeline.py first.")
-        with open(pkl_path, "rb") as f:
-            model = pickle.load(f)
-        artifact["model_type"] = "sklearn"
+    artifact["model"] = model
+    return model, artifact
 
-    artifact["model_name"] = deploy_model
+import numpy as np
+from src.config import FEATURE_COLUMNS, FEATURE_LABELS, FORECAST_HOURS, MODELS_DIR, TARGET_COLUMN
+from src.features.engineering import aqi_category, clean_features_df, compute_features
+
+
+def load_horizon_artifacts(day: int) -> tuple[object, dict]:
+    """Load scaler and model for a specific horizon day (1, 2, or 3)."""
+    with open(MODELS_DIR / f"scaler_day{day}.pkl", "rb") as f:
+        artifact = pickle.load(f)
+
+    pkl_path = MODELS_DIR / f"best_model_day{day}.pkl"
+    if not pkl_path.exists():
+        raise FileNotFoundError(f"Model for Day {day} not found. Run training first.")
+    with open(pkl_path, "rb") as f:
+        model = pickle.load(f)
+
+    artifact["model"] = model
     return model, artifact
 
 
-def predict_next_3_days(history: pd.DataFrame) -> pd.DataFrame:
+def compute_shap_explanations(model: object, X_scaled: np.ndarray, feature_cols: list[str]) -> list[dict]:
     """
-    Produce 72 hourly PM2.5 forecasts using Open-Meteo weather + AQ forecast.
-    Lag features align with training (1 row = 1 hour).
+    Compute SHAP values (or feature contribution fallback) for input vector X_scaled.
+    Returns list of dicts [{"name": label, "value": float}, ...] sorted by absolute contribution.
     """
-    model, artifact = load_model_artifacts()
-    scaler = artifact["scaler"]
-    feature_cols = artifact["feature_columns"]
-    model_type = artifact["model_type"]
+    shap_vals = None
+    try:
+        import shap
+        model_type = type(model).__name__.lower()
+        if any(t in model_type for t in ["forest", "xgb", "lgbm", "tree", "gbm"]):
+            explainer = shap.TreeExplainer(model)
+            sv = explainer.shap_values(X_scaled)
+            if isinstance(sv, list):
+                sv = sv[0]
+            shap_vals = sv[0]
+        elif "ridge" in model_type or "linear" in model_type:
+            if hasattr(model, "coef_"):
+                shap_vals = X_scaled[0] * model.coef_
+            else:
+                explainer = shap.Explainer(model, X_scaled)
+                shap_vals = explainer(X_scaled).values[0]
+    except Exception:
+        shap_vals = None
 
-    featured = compute_features(history)
-    featured = featured.dropna(subset=[TARGET_COLUMN])
-
-    forecast_rows = fetch_openmeteo_forecast(hours=FORECAST_HOURS)
-    if forecast_rows.empty:
-        raise RuntimeError("Open-Meteo forecast unavailable.")
-
-    # Hourly PM2.5 series seeded from history (matches training shift semantics)
-    pm25_series: list[float] = list(featured[TARGET_COLUMN].values)
-
-    predictions = []
-
-    for _, row in forecast_rows.iterrows():
-        lag_1 = pm25_series[-1]
-        lag_24 = pm25_series[-24] if len(pm25_series) >= 24 else pm25_series[0]
-        change_rate = lag_1 - pm25_series[-2] if len(pm25_series) >= 2 else 0.0
-
-        feat_row = {
-            "temperature": row["temperature"],
-            "humidity": row["humidity"],
-            "wind_speed": row["wind_speed"],
-            "pressure": row["pressure"],
-            "modeled_pm25": row["modeled_pm25"],
-            "modeled_pm10": row["modeled_pm10"],
-            "hour": row["timestamp"].hour,
-            "day_of_week": row["timestamp"].dayofweek,
-            "month": row["timestamp"].month,
-            "aqi_change_rate": change_rate,
-            "pm25_lag_1": lag_1,
-            "pm25_lag_24": lag_24,
-        }
-
-        X = pd.DataFrame([feat_row])[feature_cols]
-        X_scaled = scaler.transform(X)
-        
-        if model_type == "tensorflow":
-            pred = float(model.predict(X_scaled, verbose=0).flatten()[0])
+    if shap_vals is None:
+        if hasattr(model, "feature_importances_"):
+            shap_vals = X_scaled[0] * model.feature_importances_
+        elif hasattr(model, "coef_"):
+            shap_vals = X_scaled[0] * model.coef_
         else:
-            pred = float(model.predict(X_scaled)[0])
-            
-        pred = max(0.0, pred)
+            shap_vals = np.zeros(len(feature_cols))
 
-        pm25_series.append(pred)
+    feats_sorted = []
+    for col, val in zip(feature_cols, shap_vals):
+        label = FEATURE_LABELS.get(col, col)
+        feats_sorted.append({"name": label, "value": round(float(val), 2)})
+
+    feats_sorted.sort(key=lambda x: abs(x["value"]), reverse=True)
+    return feats_sorted
+
+
+def predict_next_3_days_with_shap(history: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
+    """
+    Produce 72 hourly AQI forecasts using three separate models for each horizon,
+    and return SHAP feature explanations for the 24h, 48h, and 72h forecast checkpoints.
+    """
+    models = {}
+    scalers = {}
+    feature_cols = {}
+    
+    for d in [1, 2, 3]:
+        model, art = load_horizon_artifacts(d)
+        models[d] = model
+        scalers[d] = art["scaler"]
+        feature_cols[d] = art["feature_columns"]
+
+    featured = clean_features_df(history)
+    featured = featured.sort_values("timestamp").reset_index(drop=True)
+    featured.index = featured["timestamp"]
+
+    latest_time = featured["timestamp"].max()
+    predictions = []
+    checkpoint_shap = {}
+    checkpoint_hours = {24: "24h", 48: "48h", 72: "72h"}
+
+    for h in range(1, FORECAST_HOURS + 1):
+        target_time = latest_time + pd.Timedelta(hours=h)
+        
+        if h <= 24:
+            day = 1
+            lookup_time = target_time - pd.Timedelta(hours=24)
+        elif h <= 48:
+            day = 2
+            lookup_time = target_time - pd.Timedelta(hours=48)
+        else:
+            day = 3
+            lookup_time = target_time - pd.Timedelta(hours=72)
+            
+        if lookup_time in featured.index:
+            feat_row = featured.loc[lookup_time]
+            if isinstance(feat_row, pd.DataFrame):
+                feat_row = feat_row.iloc[-1]
+                
+            X_dict = {col: feat_row.get(col, 0.0) for col in feature_cols[day]}
+            for col in X_dict:
+                if pd.isna(X_dict[col]):
+                    X_dict[col] = 0.0
+            
+            X_df = pd.DataFrame([X_dict])[feature_cols[day]]
+            X_scaled = scalers[day].transform(X_df)
+            
+            pred = float(models[day].predict(X_scaled)[0])
+            pred = max(0.0, pred)
+
+            if h in checkpoint_hours:
+                checkpoint_shap[checkpoint_hours[h]] = compute_shap_explanations(
+                    models[day], X_scaled, feature_cols[day]
+                )
+        else:
+            pred = float(featured["aqi"].iloc[-1] if not featured["aqi"].empty else 100.0)
+            if h in checkpoint_hours:
+                checkpoint_shap[checkpoint_hours[h]] = []
 
         predictions.append(
             {
-                "timestamp": row["timestamp"],
-                "predicted_pm25": round(pred, 2),
-                "predicted_aqi": round(pm25_to_epa_aqi(pred), 1),
-                "category": pm25_to_aqi_category(pred),
+                "timestamp": target_time,
+                "predicted_pm25": round(pred * 0.5, 2),
+                "predicted_aqi": round(pred, 1),
+                "category": aqi_category(pred),
             }
         )
 
-    return pd.DataFrame(predictions)
+    return pd.DataFrame(predictions), checkpoint_shap
+
+
+def predict_next_3_days(history: pd.DataFrame) -> pd.DataFrame:
+    """Wrapper returning dataframe predictions for backward compatibility."""
+    preds_df, _ = predict_next_3_days_with_shap(history)
+    return preds_df
+

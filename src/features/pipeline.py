@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 from src.config import (
     FEATURE_GROUP_NAME,
     FEATURE_GROUP_VERSION,
+    FEATURE_COLUMNS,
+    TARGET_COLUMN,
     FEATURES_CSV,
     HISTORICAL_CSV,
 )
-from src.features.engineering import compute_features
+from src.features.engineering import clean_features_df, compute_features
 from src.features.fetch_raw import (
     current_reading_to_row,
     fetch_aqicn_current,
@@ -27,6 +29,8 @@ def run_feature_pipeline(upload_to_hopsworks: bool = False) -> pd.DataFrame:
     1. Fetch current Open-Meteo weather + AQ (same provider as training)
     2. Optionally enrich with AQICN ground-truth PM2.5
     3. Append to historical dataset and compute features
+    4. Remove NaNs and sanitize feature matrix
+    5. Optionally upload to Hopsworks Feature Store
     """
     Path("data").mkdir(exist_ok=True)
 
@@ -46,7 +50,7 @@ def run_feature_pipeline(upload_to_hopsworks: bool = False) -> pd.DataFrame:
     else:
         combined = new_row
 
-    featured = compute_features(combined)
+    featured = clean_features_df(combined)
     featured.to_csv(FEATURES_CSV, index=False)
     featured.to_csv(HISTORICAL_CSV, index=False)
 
@@ -57,14 +61,21 @@ def run_feature_pipeline(upload_to_hopsworks: bool = False) -> pd.DataFrame:
 
 
 def _upload_to_hopsworks(df: pd.DataFrame) -> None:
-    """Insert feature dataframe into Hopsworks Feature Store."""
+    """Insert feature dataframe into Hopsworks Feature Store.
+    
+    Only inserts clean rows that have a valid AQI target and non-NaN features.
+    The aqi column is Open-Meteo's us_aqi — no manual formula is applied here.
+    """
     import hopsworks
 
     api_key = os.getenv("HOPSWORKS_API_KEY")
     if not api_key:
         raise ValueError("HOPSWORKS_API_KEY not found in .env")
 
-    clean = df.dropna(subset=["ground_pm25"]).copy()
+    # Clean NaNs and select target + feature columns + timestamp
+    clean = clean_features_df(df)
+    cols_to_upload = ["timestamp", TARGET_COLUMN] + [c for c in FEATURE_COLUMNS if c in clean.columns]
+    clean = clean[cols_to_upload].copy()
     clean["timestamp"] = pd.to_datetime(clean["timestamp"])
 
     project = hopsworks.login(api_key_value=api_key)
@@ -73,7 +84,8 @@ def _upload_to_hopsworks(df: pd.DataFrame) -> None:
         name=FEATURE_GROUP_NAME,
         version=FEATURE_GROUP_VERSION,
         primary_key=["timestamp"],
-        description="Lahore AQI features with weather and derived fields.",
+        description="Lahore AQI features — 17 clean weather/AQ features and Open-Meteo us_aqi target.",
         event_time="timestamp",
     )
     fg.insert(clean)
+
