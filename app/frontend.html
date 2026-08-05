@@ -44,11 +44,49 @@
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             padding: 28px 20px 60px;
+            overflow-x: hidden;
+        }
+
+        html {
+            overflow-x: hidden;
         }
 
         .wrap {
-            max-width: 1080px;
+            width: 100%;
+            max-width: 2200px;
             margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .dash-item {
+            min-width: 0;
+        }
+
+        .span-7 {
+            grid-column: span 7;
+        }
+
+        .span-5 {
+            grid-column: span 5;
+        }
+
+        .span-12 {
+            grid-column: span 12;
+        }
+
+        @media (max-width: 1100px) {
+
+            .span-7,
+            .span-5,
+            .span-12 {
+                grid-column: span 12;
+            }
         }
 
         /* ---------- Header ---------- */
@@ -150,12 +188,131 @@
         }
 
         .refresh-btn.spinning svg {
-            animation: spin .6s linear;
+            animation: spin .7s linear infinite;
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .refresh-btn.success {
+            color: var(--c-good);
+            border-color: var(--c-good);
+        }
+
+        .refresh-btn.fail {
+            color: var(--c-unhealthy);
+            border-color: var(--c-unhealthy);
         }
 
         @keyframes spin {
             to {
                 transform: rotate(360deg);
+            }
+        }
+
+        /* ---------- Toast notifications ---------- */
+        #toastStack {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 999;
+            max-width: 320px;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent-amber);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            color: var(--text-primary);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            animation: toastIn .25s ease-out;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .toast.success {
+            border-left-color: var(--c-good);
+        }
+
+        .toast.error {
+            border-left-color: var(--c-unhealthy);
+        }
+
+        .toast-icon {
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .toast.leaving {
+            animation: toastOut .2s ease-in forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+        }
+
+        /* ---------- Skeleton loading ---------- */
+        .skeleton {
+            position: relative;
+            overflow: hidden;
+            background: var(--surface-alt);
+            border-radius: 6px;
+            color: transparent !important;
+        }
+
+        .skeleton::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+            animation: shimmer 1.4s infinite;
+        }
+
+        @keyframes shimmer {
+            from {
+                transform: translateX(-100%);
+            }
+
+            to {
+                transform: translateX(100%);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn .3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
             }
         }
 
@@ -165,6 +322,7 @@
 
         .section-label {
             font-size: 11px;
+            margin-top: 15px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-faint);
@@ -310,14 +468,8 @@
         /* ---------- Pollutants grid ---------- */
         .pollutant-grid {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 12px;
-        }
-
-        @media (max-width:760px) {
-            .pollutant-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
         }
 
         @media (max-width:420px) {
@@ -639,134 +791,141 @@
                 <div class="location" id="headerLocation">Loading...</div>
                 <div class="location-sub" id="headerRegion"></div>
                 <div class="refresh-row">
-                    <span class="updated" id="updatedTime">Updated 12:04 AM</span>
-                    <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                    <span class="updated" id="updatedTime" aria-live="polite">—</span>
+                    <button type="button" class="refresh-btn" id="refreshBtn" aria-label="Refresh dashboard data">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                             <path d="M21 12a9 9 0 1 1-3-6.7" />
                             <path d="M21 3v6h-6" />
                         </svg>
-                        Refresh
+                        <span id="refreshBtnLabel">Refresh</span>
                     </button>
                 </div>
             </div>
         </header>
 
-        <!-- CURRENT AQI HERO -->
-        <section>
-            <div class="section-label">Current Air Quality</div>
-            <div class="card hero">
-                <div class="gauge-wrap">
-                    <div class="gauge-glow" id="gaugeGlow" style="background:var(--c-usg);"></div>
-                    <svg width="200" height="200" viewBox="0 0 200 200">
-                        <circle cx="100" cy="100" r="86" fill="none" stroke="var(--surface-alt)" stroke-width="14" />
-                        <circle id="gaugeArc" cx="100" cy="100" r="86" fill="none" stroke="var(--c-usg)"
-                            stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35"
-                            stroke-dashoffset="540.35" />
-                    </svg>
-                    <div class="gauge-center">
-                        <div class="gauge-value" id="gaugeValue" style="color:var(--c-usg);">113</div>
-                        <div class="gauge-label">AQI · 10:00 PM</div>
-                    </div>
-                </div>
-                <div class="hero-info">
-                    <h2 id="heroTitle">Air Quality</h2>
-                    <div class="status-pill" style="background:rgba(232,163,61,0.14); color:var(--c-usg);">
-                        <span class="status-dot" style="background:var(--c-usg);"></span>
-                        Unhealthy for Sensitive Groups
-                    </div>
-                    <p class="hero-desc">Current air quality conditions are within a range that most people will not
-                        notice, but sensitive groups should stay alert.</p>
-                    <p class="hero-guidance"><b>Health guidance:</b> Sensitive groups may experience health effects.
-                        General public is less likely to be affected.</p>
-                    <div class="trend-chip" id="trendChip">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="3">
-                            <path d="M3 17l6-6 4 4 8-8" />
-                            <path d="M17 7h4v4" />
+        <div class="dashboard-grid">
+
+            <!-- CURRENT AQI HERO -->
+            <div class="dash-item span-7">
+                <div class="section-label">Current Air Quality</div>
+                <div class="card hero">
+                    <div class="gauge-wrap">
+                        <div class="gauge-glow" id="gaugeGlow" style="background:var(--c-usg);"></div>
+                        <svg width="200" height="200" viewBox="0 0 200 200">
+                            <circle cx="100" cy="100" r="86" fill="none" stroke="var(--surface-alt)"
+                                stroke-width="14" />
+                            <circle id="gaugeArc" cx="100" cy="100" r="86" fill="none" stroke="var(--c-usg)"
+                                stroke-width="14" stroke-linecap="round" stroke-dasharray="540.35"
+                                stroke-dashoffset="540.35" />
                         </svg>
-                        <span id="trendChipText">Stable · 0 points vs. previous reading</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- POLLUTANTS -->
-        <section>
-            <div class="section-label">Current Pollutants</div>
-            <div class="card">
-                <div class="pollutant-grid" id="pollutantGrid"></div>
-                <div style="height:1px; background:var(--border); margin:20px 0;"></div>
-                <div class="weather-row" id="weatherRow"></div>
-            </div>
-        </section>
-
-        <!-- 24H TREND -->
-        <section>
-            <div class="section-label">24-Hour AQI Trend</div>
-            <div class="card chart-card">
-                <div class="stat-row">
-                    <div class="stat"><span class="sl">Current</span><span class="sv"
-                            style="color:var(--c-usg);">113</span></div>
-                    <div class="stat"><span class="sl">Avg</span><span class="sv">130</span></div>
-                    <div class="stat"><span class="sl">Min</span><span class="sv" style="color:var(--c-usg);">108</span>
-                    </div>
-                    <div class="stat"><span class="sl">Max</span><span class="sv"
-                            style="color:var(--c-unhealthy);">148</span></div>
-                </div>
-                <canvas id="trendChart"></canvas>
-            </div>
-        </section>
-
-        <!-- 3-DAY FORECAST -->
-        <section>
-            <div class="section-label">AI Air Quality Forecast — Predicted AQI for the next three days</div>
-            <div class="forecast-grid" id="forecastGrid"></div>
-        </section>
-
-        <!-- FORECAST TREND -->
-        <section>
-            <div class="card chart-card">
-                <div class="section-label" style="margin-bottom:16px;">Predicted AQI Trend — Today through 72-hour AI
-                    forecast</div>
-                <canvas id="forecastChart"></canvas>
-            </div>
-        </section>
-
-        <!-- SHAP -->
-        <section>
-            <div class="section-label">Why This Prediction — SHAP feature contributions</div>
-            <div class="card">
-                <div class="shap-tabs">
-                    <div class="shap-tab active" data-h="24h" onclick="setShapHorizon('24h', this)">24h</div>
-                    <div class="shap-tab" data-h="48h" onclick="setShapHorizon('48h', this)">48h</div>
-                    <div class="shap-tab" data-h="72h" onclick="setShapHorizon('72h', this)">72h</div>
-                </div>
-                <div class="shap-summary">
-                    <div>
-                        <div class="ss-label">Predicted AQI</div>
-                        <div class="ss-value" id="shapPred" style="font-size:22px;">117.7</div>
-                    </div>
-                    <div>
-                        <div class="ss-label">Top increase</div>
-                        <div class="ss-value" style="color:var(--c-unhealthy);" id="shapTopInc">Current AQI (+4.71)
+                        <div class="gauge-center">
+                            <div class="gauge-value" id="gaugeValue" style="color:var(--c-usg);">—</div>
+                            <div class="gauge-label" id="gaugeLabel">AQI · —</div>
                         </div>
                     </div>
-                    <div>
-                        <div class="ss-label">Top decrease</div>
-                        <div class="ss-value" style="color:var(--c-good);" id="shapTopDec">PM10 (−1.65)</div>
+                    <div class="hero-info">
+                        <h2 id="heroTitle">Air Quality</h2>
+                        <div class="status-pill" id="statusPill"
+                            style="background:rgba(232,163,61,0.14); color:var(--c-usg);">
+                            <span class="status-dot" id="statusDot" style="background:var(--c-usg);"></span>
+                            <span id="statusLabel">Loading...</span>
+                        </div>
+                        <p class="hero-desc" id="heroDesc">Fetching the latest air quality data…</p>
+                        <p class="hero-guidance" id="heroGuidance"></p>
+                        <div class="trend-chip" id="trendChip">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="3">
+                                <path d="M3 17l6-6 4 4 8-8" />
+                                <path d="M17 7h4v4" />
+                            </svg>
+                            <span id="trendChipText">—</span>
+                        </div>
                     </div>
                 </div>
-                <div id="shapBars"></div>
-                <div class="shap-legend">
-                    <span><span class="lg-dot" style="background:var(--c-unhealthy);"></span>Increases predicted
-                        AQI</span>
-                    <span><span class="lg-dot" style="background:var(--c-good);"></span>Decreases predicted AQI</span>
+            </div>
+
+            <!-- POLLUTANTS -->
+            <div class="dash-item span-5">
+                <div class="section-label">Current Pollutants</div>
+                <div class="card">
+                    <div class="pollutant-grid" id="pollutantGrid"></div>
+                    <div style="height:1px; background:var(--border); margin:20px 0;"></div>
+                    <div class="weather-row" id="weatherRow"></div>
                 </div>
             </div>
-        </section>
+
+            <!-- 24H TREND -->
+            <div class="dash-item span-12">
+                <div class="section-label">24-Hour AQI Trend</div>
+                <div class="card chart-card">
+                    <div class="stat-row">
+                        <div class="stat"><span class="sl">Current</span><span class="sv" id="statCurrent"
+                                style="color:var(--c-usg);">—</span></div>
+                        <div class="stat"><span class="sl">Avg</span><span class="sv" id="statAvg">—</span></div>
+                        <div class="stat"><span class="sl">Min</span><span class="sv" id="statMin"
+                                style="color:var(--c-usg);">—</span>
+                        </div>
+                        <div class="stat"><span class="sl">Max</span><span class="sv" id="statMax"
+                                style="color:var(--c-unhealthy);">—</span></div>
+                    </div>
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3-DAY FORECAST -->
+            <div class="dash-item span-12">
+                <div class="section-label">AI Air Quality Forecast — Predicted AQI for the next three days</div>
+                <div class="forecast-grid" id="forecastGrid"></div>
+            </div>
+
+            <!-- FORECAST TREND -->
+            <div class="dash-item span-12">
+                <div class="card chart-card">
+                    <div class="section-label" style="margin-bottom:16px;">Predicted AQI Trend — Today through 72-hour
+                        AI forecast</div>
+                    <canvas id="forecastChart"></canvas>
+                </div>
+            </div>
+
+            <!-- SHAP -->
+            <div class="dash-item span-12">
+                <div class="section-label">Why This Prediction — SHAP feature contributions</div>
+                <div class="card">
+                    <div class="shap-tabs">
+                        <div class="shap-tab active" data-h="24h" onclick="setShapHorizon('24h', this)">24h</div>
+                        <div class="shap-tab" data-h="48h" onclick="setShapHorizon('48h', this)">48h</div>
+                        <div class="shap-tab" data-h="72h" onclick="setShapHorizon('72h', this)">72h</div>
+                    </div>
+                    <div class="shap-summary">
+                        <div>
+                            <div class="ss-label">Predicted AQI</div>
+                            <div class="ss-value" id="shapPred" style="font-size:22px;">—</div>
+                        </div>
+                        <div>
+                            <div class="ss-label">Top increase</div>
+                            <div class="ss-value" style="color:var(--c-unhealthy);" id="shapTopInc">—</div>
+                        </div>
+                        <div>
+                            <div class="ss-label">Top decrease</div>
+                            <div class="ss-value" style="color:var(--c-good);" id="shapTopDec">—</div>
+                        </div>
+                    </div>
+                    <div id="shapBars"></div>
+                    <div class="shap-legend">
+                        <span><span class="lg-dot" style="background:var(--c-unhealthy);"></span>Increases predicted
+                            AQI</span>
+                        <span><span class="lg-dot" style="background:var(--c-good);"></span>Decreases predicted
+                            AQI</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
 
         <footer id="siteFooter">Pearls AQI Predictor · AI-powered air quality intelligence</footer>
     </div>
+
+    <div id="toastStack" aria-live="polite"></div>
 
     <script>
         const CATS = {
@@ -777,6 +936,7 @@
             very_unhealthy: { label: 'Very Unhealthy', color: 'var(--c-very-unhealthy)', hex: '#A15CC4', max: 300 },
             hazardous: { label: 'Hazardous', color: 'var(--c-hazardous)', hex: '#8B2E3E', max: 500 },
         };
+
         function catFor(aqi) {
             if (aqi <= 50) return CATS.good;
             if (aqi <= 100) return CATS.moderate;
@@ -787,242 +947,405 @@
         }
 
         let DATA = null;
+        let trendChartObj = null;
+        let forecastChartObj = null;
+        let activeShapHorizon = '24h';
 
-        function showError() {
-            document.getElementById('headerLocation').textContent = 'Data Not Found';
-            document.getElementById('headerRegion').textContent = '';
-            document.getElementById('heroTitle').textContent = 'Pipeline data missing';
-            const errDiv = document.createElement('div');
-            errDiv.id = 'dataBanner';
-            errDiv.style.cssText = 'background:rgba(226,103,59,0.1); border:1px solid rgba(226,103,59,0.35); color:#E2673B; font-size:13px; padding:12px 16px; border-radius:8px; margin-bottom:18px; font-family:IBM Plex Mono, monospace; line-height:1.6;';
-            errDiv.innerHTML = '⚠️ <b>No dashboard data found.</b><br>Run <code>python aqi/pipeline.py</code> first, then restart the server.';
-            const existingBanner = document.getElementById('dataBanner');
-            if (existingBanner) existingBanner.remove();
-            document.querySelector('header').after(errDiv);
-        }
+        // Mock Data Pipeline Loader
+        function getMockData() {
+            const hours = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2, '0')}:00`);
+            const trendValues = [110, 112, 115, 118, 122, 125, 130, 138, 142, 145, 140, 135, 128, 122, 120, 118, 125, 132, 138, 140, 135, 129, 124, 122];
 
-        async function loadData() {
-            // Try Flask API first (when served via python aqi/app.py)
-            // then fall back to relative static path (when served via python -m http.server)
-            const SOURCES = ['/api/data', '../data/aqi_dashboard_data.json'];
-            for (const src of SOURCES) {
-                try {
-                    const res = await fetch(src, { cache: 'no-store' });
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (!json.error) { DATA = json; break; }
+            return {
+                location: "Lahore",
+                region: "Punjab, Pakistan",
+                updated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                current: {
+                    aqi: 122,
+                    mainPollutant: "PM2.5",
+                    desc: "Air quality is acceptable; however, for some pollutants there may be a moderate health concern for a very small number of people.",
+                    guidance: "<b>Sensitive groups:</b> Reduce prolonged or heavy exertion outdoors.",
+                    trendText: "-5.2% over last 24h"
+                },
+                pollutants: [
+                    { name: "PM2.5", val: 44.2, unit: "µg/m³" },
+                    { name: "PM10", val: 82.0, unit: "µg/m³" },
+                    { name: "O3", val: 31.5, unit: "ppb" },
+                    { name: "NO2", val: 18.4, unit: "ppb" },
+                    { name: "SO2", val: 5.1, unit: "ppb" },
+                    { name: "CO", val: 0.6, unit: "ppm" }
+                ],
+                weather: [
+                    { label: "Temp", val: "32°C" },
+                    { label: "Humidity", val: "68%" },
+                    { label: "Wind", val: "12 km/h" },
+                    { label: "Pressure", val: "1008 hPa" }
+                ],
+                trend: {
+                    labels: hours,
+                    values: trendValues,
+                    avg: 128,
+                    min: 110,
+                    max: 145
+                },
+                forecast: [
+                    { day: "Tomorrow", horizon: "24h", aqi: 128, rmse: 8.2 },
+                    { day: "Day 2", horizon: "48h", aqi: 142, rmse: 11.4 },
+                    { day: "Day 3", horizon: "72h", aqi: 115, rmse: 14.1 }
+                ],
+                forecastTrend: {
+                    labels: ["Today", "+12h", "+24h", "+36h", "+48h", "+60h", "+72h"],
+                    values: [122, 125, 128, 135, 142, 128, 115]
+                },
+                shap: {
+                    '24h': {
+                        pred: 128,
+                        topInc: "PM2.5 Lag (+14.2)",
+                        topDec: "Wind Speed (-6.1)",
+                        features: [
+                            { name: "PM2.5 (24h Avg)", val: 14.2 },
+                            { name: "Humidity", val: 8.5 },
+                            { name: "Temperature", val: 3.1 },
+                            { name: "Wind Direction", val: -2.4 },
+                            { name: "Wind Speed", val: -6.1 }
+                        ]
+                    },
+                    '48h': {
+                        pred: 142,
+                        topInc: "Stagnant Air (+18.1)",
+                        topDec: "Boundary Layer (-3.2)",
+                        features: [
+                            { name: "Inversion Layer", val: 18.1 },
+                            { name: "PM10 Lag", val: 11.4 },
+                            { name: "Temperature", val: 5.2 },
+                            { name: "Humidity", val: -1.5 },
+                            { name: "Boundary Layer", val: -3.2 }
+                        ]
+                    },
+                    '72h': {
+                        pred: 115,
+                        topInc: "Traffic Volume (+9.0)",
+                        topDec: "Rain Forecast (-16.4)",
+                        features: [
+                            { name: "Traffic Index", val: 9.0 },
+                            { name: "Humidity", val: 4.1 },
+                            { name: "Temperature", val: -2.1 },
+                            { name: "Wind Speed", val: -7.5 },
+                            { name: "Rain Forecast", val: -16.4 }
+                        ]
                     }
-                } catch (_) {}
-            }
-            if (!DATA) { showError(); return; }
-            renderAll();
+                }
+            };
         }
 
-        // ---------- Gauge ----------
-        function setGauge(aqi) {
+        // ---------- Toast notifications ----------
+        function showToast(message, type = 'info') {
+            const stack = document.getElementById('toastStack');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success'
+                ? '<svg class="toast-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4CAF7D" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>'
+                : type === 'error'
+                    ? '<svg class="toast-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E2673B" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>'
+                    : '';
+            toast.innerHTML = `${icon}<span>${message}</span>`;
+            stack.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('leaving');
+                setTimeout(() => toast.remove(), 220);
+            }, 3200);
+        }
+
+        // ---------- Skeleton loading ----------
+        function setSkeletonState(isLoading) {
+            const ids = ['gaugeValue', 'statCurrent', 'statAvg', 'statMin', 'statMax', 'shapPred'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('skeleton', isLoading);
+            });
+        }
+
+        function renderGauge(aqi) {
             const c = catFor(aqi);
-            const pct = Math.min(aqi / 500, 1);
-            const circumference = 540.35;
-            document.getElementById('gaugeArc').style.stroke = c.hex;
-            document.getElementById('gaugeArc').style.strokeDashoffset = circumference * (1 - pct);
-            document.getElementById('gaugeValue').textContent = Math.round(aqi);
-            document.getElementById('gaugeValue').style.color = c.hex;
-            document.getElementById('gaugeGlow').style.background = c.hex;
+            const gaugeArc = document.getElementById('gaugeArc');
+            const gaugeGlow = document.getElementById('gaugeGlow');
+            const gaugeValue = document.getElementById('gaugeValue');
+            const gaugeLabel = document.getElementById('gaugeLabel');
+
+            const maxAqi = 500;
+            const totalDash = 540.35;
+            const pct = Math.min(aqi / maxAqi, 1);
+            const offset = totalDash * (1 - pct);
+
+            gaugeArc.style.stroke = c.hex;
+            gaugeArc.style.strokeDashoffset = offset;
+            gaugeGlow.style.background = c.hex;
+            gaugeValue.style.color = c.hex;
+            gaugeValue.textContent = aqi;
+            gaugeLabel.textContent = `AQI · ${c.label}`;
         }
 
-        let trendChartInstance = null, forecastChartInstance = null;
+        function renderDashboard() {
+            if (!DATA) return;
 
-        function renderAll() {
-            const d = DATA;
-            const cur = d.current;
-            const c = catFor(cur.aqi);
+            // Header
+            document.getElementById('headerLocation').textContent = DATA.location;
+            document.getElementById('headerRegion').textContent = DATA.region;
+            document.getElementById('updatedTime').textContent = `Updated ${DATA.updated}`;
 
-            // Sample-data / data-note banner
-            const existingBanner = document.getElementById('dataBanner');
-            if (existingBanner) existingBanner.remove();
-            if (d.data_note) {
-                const banner = document.createElement('div');
-                banner.id = 'dataBanner';
-                banner.style.cssText = 'background:rgba(232,163,61,0.1); border:1px solid rgba(232,163,61,0.3); color:var(--accent-amber); font-size:12px; padding:8px 14px; border-radius:8px; margin-bottom:18px; font-family:IBM Plex Mono, monospace;';
-                banner.textContent = '🤖 ' + d.data_note;
-                document.querySelector('header').after(banner);
-            }
+            // Hero
+            renderGauge(DATA.current.aqi);
+            const cat = catFor(DATA.current.aqi);
+            document.getElementById('heroTitle').textContent = `Air Quality is ${cat.label}`;
 
-            // Header / location
-            const locName = d.location?.name || 'Your City';
-            const locRegion = d.location?.region || '';
-            const locCountry = d.location?.country || '';
-            document.getElementById('headerLocation').textContent = `${locName}, ${locRegion}`;
-            document.getElementById('headerRegion').textContent = locCountry;
-            document.getElementById('heroTitle').textContent = `${locName} Air Quality`;
-            document.getElementById('siteFooter').textContent = `Pearls AQI Predictor · AI-powered air quality intelligence for ${locName}, ${locRegion}`;
-            document.getElementById('updatedTime').textContent = 'Updated ' + new Date(d.updated_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const statusPill = document.getElementById('statusPill');
+            statusPill.style.background = `${cat.hex}22`;
+            statusPill.style.color = cat.hex;
+            document.getElementById('statusDot').style.background = cat.hex;
+            document.getElementById('statusLabel').textContent = cat.label;
 
-            // Gauge + status
-            setGauge(cur.aqi);
-            document.querySelector('.gauge-label').textContent = `AQI · ${new Date(cur.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-            document.querySelector('.status-pill').style.background = c.hex + '24';
-            document.querySelector('.status-pill').style.color = c.hex;
-            document.querySelector('.status-dot').style.background = c.hex;
-            document.querySelector('.status-pill').lastChild.textContent = ' ' + c.label;
+            document.getElementById('heroDesc').textContent = DATA.current.desc;
+            document.getElementById('heroGuidance').innerHTML = DATA.current.guidance;
+            document.getElementById('trendChipText').textContent = DATA.current.trendText;
 
             // Pollutants
-            const p = cur.pollutants;
-            const pollutants = [
-                { name: 'PM2.5', val: p.pm25, unit: 'μg/m³' },
-                { name: 'PM10', val: p.pm10, unit: 'μg/m³' },
-                p.ozone != null && { name: 'O₃', val: p.ozone, unit: 'μg/m³' },
-                p.no2 != null && { name: 'NO₂', val: p.no2, unit: 'μg/m³' },
-                p.so2 != null && { name: 'SO₂', val: p.so2, unit: 'μg/m³' },
-                p.co != null && { name: 'CO', val: p.co, unit: 'μg/m³' },
-            ].filter(Boolean);
-            document.getElementById('pollutantGrid').innerHTML = pollutants.map(pt => `
-    <div class="pollutant">
-      <div class="pollutant-val">${pt.val}</div>
-      <div class="pollutant-unit">${pt.unit}</div>
-      <div class="pollutant-name">${pt.name}</div>
-    </div>`).join('');
+            const pGrid = document.getElementById('pollutantGrid');
+            pGrid.innerHTML = DATA.pollutants.map(p => `
+                <div class="pollutant">
+                    <div class="pollutant-val">${p.val}</div>
+                    <div class="pollutant-unit">${p.unit}</div>
+                    <div class="pollutant-name">${p.name}</div>
+                </div>
+            `).join('');
 
-            const w = cur.weather;
-            document.getElementById('weatherRow').innerHTML = [
-                { label: 'Temperature', val: `${w.temperature}°C` },
-                { label: 'Humidity', val: `${w.humidity}%` },
-                { label: 'Pressure', val: `${w.pressure} hPa` },
-            ].map(wt => `<div class="weather-item"><span class="wl">${wt.label}</span><span class="wv">${wt.val}</span></div>`).join('');
+            // Weather
+            const wRow = document.getElementById('weatherRow');
+            wRow.innerHTML = DATA.weather.map(w => `
+                <div class="weather-item">
+                    <span class="wl">${w.label}</span>
+                    <span class="wv">${w.val}</span>
+                </div>
+            `).join('');
 
-            // 24h trend
-            const trend = d.trend_24h || [];
-            const trendLabels = trend.map(t => t._label || new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            const trendVals = trend.map(t => t.aqi);
-            const avg = trendVals.length ? (trendVals.reduce((a, b) => a + b, 0) / trendVals.length) : 0;
-            document.querySelectorAll('.stat-row .sv')[0].textContent = Math.round(cur.aqi);
-            document.querySelectorAll('.stat-row .sv')[0].style.color = c.hex;
-            document.querySelectorAll('.stat-row .sv')[1].textContent = avg.toFixed(0);
-            document.querySelectorAll('.stat-row .sv')[2].textContent = trendVals.length ? Math.min(...trendVals) : '—';
-            document.querySelectorAll('.stat-row .sv')[3].textContent = trendVals.length ? Math.max(...trendVals) : '—';
+            // Trend Stats
+            document.getElementById('statCurrent').textContent = DATA.current.aqi;
+            document.getElementById('statAvg').textContent = DATA.trend.avg;
+            document.getElementById('statMin').textContent = DATA.trend.min;
+            document.getElementById('statMax').textContent = DATA.trend.max;
 
-            // Trend chip: current vs. previous reading
-            if (trendVals.length >= 2) {
-                const prev = trendVals[trendVals.length - 2];
-                const delta = Math.round(cur.aqi - prev);
-                const dir = delta < 0 ? 'Improving' : delta > 0 ? 'Worsening' : 'Stable';
-                const dirColor = delta < 0 ? 'var(--c-good)' : delta > 0 ? 'var(--c-unhealthy)' : 'var(--text-muted)';
-                document.getElementById('trendChipText').textContent = `${dir} · ${Math.abs(delta)} points vs. previous reading`;
-                document.getElementById('trendChip').style.color = dirColor;
-            }
+            render24hChart();
+            renderForecastCards();
+            renderForecastChart();
+            renderShap();
+        }
 
-            if (trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(document.getElementById('trendChart'), {
+        function render24hChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChartObj) trendChartObj.destroy();
+
+            trendChartObj = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: trendLabels, datasets: [{
-                        data: trendVals, borderColor: '#E8A33D', borderWidth: 2.5, pointRadius: 0,
-                        tension: 0.35, fill: true,
-                        backgroundColor: (ctx) => {
-                            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
-                            g.addColorStop(0, 'rgba(232,163,61,0.25)'); g.addColorStop(1, 'rgba(232,163,61,0)');
-                            return g;
-                        }
+                    labels: DATA.trend.labels,
+                    datasets: [{
+                        label: '24h AQI',
+                        data: DATA.trend.values,
+                        borderColor: '#E8A33D',
+                        backgroundColor: 'rgba(232, 163, 61, 0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#E8A33D',
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#1B212B',
+                        pointHoverBorderColor: '#E8A33D',
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#1B212B',
+                            titleColor: '#8B93A1',
+                            bodyColor: '#EDEFF2',
+                            borderColor: '#2A3140',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            titleFont: { family: 'IBM Plex Mono', size: 11 },
+                            bodyFont: { family: 'IBM Plex Mono', size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function (context) {
+                                    return `AQI: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        x: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 10 } } },
-                        y: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 10 } } }
+                        x: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } },
+                        y: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } }
                     }
                 }
             });
-            document.getElementById('trendChart').parentElement.style.height = '240px';
+        }
 
-            // Forecast cards
-            const forecast = d.forecast || [];
-            document.getElementById('forecastGrid').innerHTML = forecast.map(f => {
-                const fc = catFor(f.predicted_aqi);
-                return `<div class="forecast-card" style="--bar-color:${fc.hex};">
-      <div class="fc-top"><span class="fc-horizon">${f.horizon}</span><span class="fc-day">${f.day}</span></div>
-      <div class="fc-category" style="color:${fc.hex};">${fc.label}</div>
-      <div class="fc-value" style="color:${fc.hex};">${f.predicted_aqi}</div>
-      <div class="fc-value-label">predicted AQI</div>
-      <div class="fc-rmse"><span>Model RMSE</span><b>±${f.rmse_aqi ?? '—'}</b></div>
-    </div>`;
+        function renderForecastCards() {
+            const grid = document.getElementById('forecastGrid');
+            grid.innerHTML = DATA.forecast.map(f => {
+                const c = catFor(f.aqi);
+                return `
+                    <div class="forecast-card" style="--bar-color: ${c.hex}">
+                        <div class="fc-top">
+                            <span class="fc-day">${f.day}</span>
+                            <span class="fc-horizon">${f.horizon}</span>
+                        </div>
+                        <div class="fc-category" style="color:${c.hex}">${c.label}</div>
+                        <div class="fc-value" style="color:${c.hex}">${f.aqi}</div>
+                        <div class="fc-value-label">Predicted AQI</div>
+                        <div class="fc-rmse">
+                            <span>Model Error (RMSE)</span>
+                            <b>±${f.rmse}</b>
+                        </div>
+                    </div>
+                `;
             }).join('');
+        }
 
-            // Forecast trend chart
-            const fcLabels = ['Today', ...forecast.map(f => f.horizon)];
-            const fcVals = [cur.aqi, ...forecast.map(f => f.predicted_aqi)];
-            if (forecastChartInstance) forecastChartInstance.destroy();
-            forecastChartInstance = new Chart(document.getElementById('forecastChart'), {
+        function renderForecastChart() {
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            if (forecastChartObj) forecastChartObj.destroy();
+
+            forecastChartObj = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: fcLabels, datasets: [{
-                        data: fcVals, borderColor: '#E2673B', borderWidth: 2.5, pointRadius: 5,
-                        pointBackgroundColor: '#E2673B', tension: 0.3, fill: true,
-                        backgroundColor: (ctx) => {
-                            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
-                            g.addColorStop(0, 'rgba(226,103,59,0.22)'); g.addColorStop(1, 'rgba(226,103,59,0)');
-                            return g;
-                        }
+                    labels: DATA.forecastTrend.labels,
+                    datasets: [{
+                        label: 'Predicted AQI',
+                        data: DATA.forecastTrend.values,
+                        borderColor: '#A15CC4',
+                        backgroundColor: 'rgba(161, 92, 196, 0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#A15CC4',
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#1B212B',
+                        pointHoverBorderColor: '#A15CC4',
+                        pointHoverBorderWidth: 3
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#1B212B',
+                            titleColor: '#8B93A1',
+                            bodyColor: '#EDEFF2',
+                            borderColor: '#2A3140',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            titleFont: { family: 'IBM Plex Mono', size: 11 },
+                            bodyFont: { family: 'IBM Plex Mono', size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function (context) {
+                                    return `Predicted AQI: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        x: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 11 } } },
-                        y: { grid: { color: '#2A3140' }, ticks: { color: '#5A6273', font: { family: 'IBM Plex Mono', size: 10 } } }
+                        x: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } },
+                        y: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } }
                     }
                 }
             });
-            document.getElementById('forecastChart').parentElement.querySelector('canvas').style.height = '220px';
-
-            // SHAP
-            window._shapForecast = forecast;
-            renderShap(forecast[0]?.horizon || '24h');
         }
 
-        function renderShap(horizon) {
-            const f = (window._shapForecast || []).find(x => x.horizon === horizon);
-            if (!f) return;
-            document.getElementById('shapPred').textContent = f.predicted_aqi;
-            const feats = f.features || [];
-            const sortedByVal = [...feats].sort((a, b) => b.value - a.value);
-            const top = sortedByVal[0], bottom = sortedByVal[sortedByVal.length - 1];
-            document.getElementById('shapTopInc').textContent = top ? `${top.name} (${top.value >= 0 ? '+' : ''}${top.value.toFixed(2)})` : '—';
-            document.getElementById('shapTopDec').textContent = bottom ? `${bottom.name} (${bottom.value.toFixed(2)})` : '—';
-
-            const maxAbs = Math.max(...feats.map(x => Math.abs(x.value)), 0.01);
-            document.getElementById('shapBars').innerHTML = feats.map(x => {
-                const pct = (Math.abs(x.value) / maxAbs) * 48;
-                const isPos = x.value >= 0;
-                return `<div class="shap-bar-row">
-      <div class="shap-feature">${x.name}</div>
-      <div class="shap-track">
-        <div class="shap-center-line"></div>
-        <div class="shap-fill ${isPos ? 'pos' : 'neg'}" style="width:${pct}%;"></div>
-      </div>
-      <div class="shap-val" style="text-align:${isPos ? 'left' : 'right'}; color:${isPos ? '#E2673B' : '#4CAF7D'};">${isPos ? '+' : ''}${x.value.toFixed(2)}</div>
-    </div>`;
-            }).join('');
-        }
-
-        function setShapHorizon(h, el) {
+        function setShapHorizon(horizon, element) {
+            activeShapHorizon = horizon;
             document.querySelectorAll('.shap-tab').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-            renderShap(h);
+            if (element) element.classList.add('active');
+            renderShap();
         }
 
-        // ---------- Refresh ----------
-        function refreshData() {
+        function renderShap() {
+            const sData = DATA.shap[activeShapHorizon];
+            if (!sData) return;
+
+            document.getElementById('shapPred').textContent = sData.pred;
+            document.getElementById('shapTopInc').textContent = sData.topInc;
+            document.getElementById('shapTopDec').textContent = sData.topDec;
+
+            const container = document.getElementById('shapBars');
+            const maxVal = Math.max(...sData.features.map(f => Math.abs(f.val)), 1);
+
+            container.innerHTML = sData.features.map(f => {
+                const isPos = f.val > 0;
+                const widthPct = (Math.abs(f.val) / maxVal) * 45; // scale to 45% max per side
+                const fillStyle = isPos
+                    ? `left: 50%; width: ${widthPct}%;`
+                    : `right: 50%; width: ${widthPct}%;`;
+
+                return `
+                    <div class="shap-bar-row">
+                        <div class="shap-feature">${f.name}</div>
+                        <div class="shap-track">
+                            <div class="shap-center-line"></div>
+                            <div class="shap-fill ${isPos ? 'pos' : 'neg'}" style="${fillStyle}"></div>
+                        </div>
+                        <div class="shap-val">${isPos ? '+' : ''}${f.val}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ---------- Refresh handler ----------
+        function initRefresh() {
             const btn = document.getElementById('refreshBtn');
-            btn.classList.add('spinning');
-            loadData().finally(() => {
-                setTimeout(() => btn.classList.remove('spinning'), 400);
+            btn.addEventListener('click', () => {
+                btn.disabled = true;
+                btn.classList.add('spinning');
+                setSkeletonState(true);
+
+                setTimeout(() => {
+                    DATA = getMockData();
+                    setSkeletonState(false);
+                    renderDashboard();
+
+                    btn.classList.remove('spinning');
+                    btn.classList.add('success');
+                    showToast('Air quality data updated', 'success');
+
+                    setTimeout(() => {
+                        btn.classList.remove('success');
+                        btn.disabled = false;
+                    }, 1200);
+                }, 800);
             });
         }
 
-        loadData();
+        // Init
+        window.addEventListener('DOMContentLoaded', () => {
+            DATA = getMockData();
+            renderDashboard();
+            initRefresh();
+        });
     </script>
 </body>
 

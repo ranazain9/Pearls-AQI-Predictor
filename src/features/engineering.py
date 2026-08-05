@@ -60,9 +60,11 @@ def clean_features_df(df: pd.DataFrame) -> pd.DataFrame:
     Preprocess and clean dataframe: compute features, remove NaNs, and ensure target is valid.
     """
     from src.config import FEATURE_COLUMNS, TARGET_COLUMN
-
     featured = compute_features(df)
-
+    
+    if "ground_pm25" in featured.columns and "modeled_pm25" in featured.columns:
+        featured["ground_pm25"] = featured["ground_pm25"].fillna(featured["modeled_pm25"])
+    
     # Drop rows without target
     if TARGET_COLUMN in featured.columns:
         featured = featured.dropna(subset=[TARGET_COLUMN]).reset_index(drop=True)

@@ -218,4 +218,4 @@ def _register_models_hopsworks(model_dir, metadata: dict) -> None:
     registered.save(str(model_dir))
 
 if __name__ == "__main__":
-    run_training_pipeline()
+    run_training_pipeline(register_to_hopsworks=True)

@@ -7,6 +7,7 @@ Run:
 Then open: http://127.0.0.1:5000
 """
 import json
+import math
 import os
 import sys
 from pathlib import Path
@@ -29,6 +30,17 @@ app = Flask(__name__)
 FRONTEND = ROOT / "app" / "frontend.html"
 DATA_JSON = ROOT / "data" / "aqi_dashboard_data.json"
 
+def _sanitize_nan(obj):
+    """Recursively replace NaN/inf with None so the JSON is valid."""
+    if isinstance(obj, float):
+        if math.isnan(obj) or math.isinf(obj):
+            return None
+        return obj
+    if isinstance(obj, dict):
+        return {k: _sanitize_nan(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_sanitize_nan(v) for v in obj]
+    return obj
 # ─────────────────────────────────────────────
 # AQI helpers
 # ─────────────────────────────────────────────
@@ -169,7 +181,7 @@ def dashboard_data():
         predictions, checkpoint_shap = predict_next_3_days_with_shap(history)
         meta = json.loads(training_json.read_text()) if training_json.exists() else {}
         data = _build_dashboard_json(history, predictions, meta, checkpoint_shap)
-        return jsonify(data)
+        return jsonify(_sanitize_nan(data))
     except Exception as e:
         # Fall back to pre-generated file
         if DATA_JSON.exists():
