@@ -1,6 +1,6 @@
 # 🌫️ Pearls AQI Predictor
 
-> AI-powered Air Quality Index forecasting for **Akora Khattak, Nowshera, Pakistan** — 3-day predictions using a fully serverless ML pipeline.
+> AI-powered Air Quality Index forecasting for **Lahore, Punjab, Pakistan** — 3-day predictions using a fully serverless ML pipeline.
 
 ---
 
@@ -62,6 +62,7 @@ Pearls-AQI-Predictor/
 ### 1. Install dependencies
 ```bash
 pip install -r requirements.txt
+pip install -r requirements/requirements.txt
 ```
 
 ### 2. Set up environment variables
@@ -72,13 +73,14 @@ cp .env.example .env
 
 ### 3. Run the ML pipeline
 ```bash
-python aqi/pipeline.py
+python pipeline/feature_pipeline.py --upload
+python pipeline/training_pipeline.py --register
 ```
 This fetches live weather + air quality data, trains 3 models (Random Forest, Ridge, TensorFlow), picks the best one by RMSE, and exports `data/aqi_dashboard_data.json`.
 
 ### 4. Launch the Flask dashboard
 ```bash
-python aqi/app.py
+python app/flask_api.py
 ```
 Open **http://127.0.0.1:5000** in your browser.
 
@@ -101,7 +103,7 @@ jupyter notebook notebooks/model.ipynb
 
 ## 📊 Frontends & API Endpoints
 
-### Option A — `aqi/app.py` (fast, uses pre-generated data)
+### Option A — `aqi/app.py` (fast, uses pre-generated data)  -  (optional)
 ```bash
 python aqi/pipeline.py   # generates data/aqi_dashboard_data.json first
 python aqi/app.py        # serves it at http://127.0.0.1:5000
@@ -115,7 +117,7 @@ python aqi/app.py        # serves it at http://127.0.0.1:5000
 
 ---
 
-### Option B — `app/flask_api.py` (live inference via `src/` pipeline)
+### Option B — `app/flask_api.py` (live inference via `src/` pipeline)    (main-file)
 ```bash
 python app/flask_api.py   # serves at http://127.0.0.1:5000
 ```
