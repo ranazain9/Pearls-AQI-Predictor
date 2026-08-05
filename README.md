@@ -11,8 +11,8 @@ Pearls-AQI-Predictor/
 │
 ├── notebooks/                  ← 📓 Exploration & model experiments
 │   └── model.ipynb             ← EDA + multi-model training + SHAP analysis
-│
-├── aqi/                        ← 🚀 Production pipeline & dashboard
+│ 
+├── aqi/                        ← 🚀 Production pipeline & dashboard    (optional-pipeline)
 │   ├── pipeline.py             ← Main ML pipeline (run this first!)
 │   ├── app.py                  ← Flask server  →  http://127.0.0.1:5000
 │   └── frontend.html           ← Dashboard UI (HTML + Chart.js)
@@ -33,8 +33,8 @@ Pearls-AQI-Predictor/
 │   └── training_pipeline.py    ← Daily retrain + Hopsworks register
 │
 ├── app/                        ← 📊 Alternative frontends
-│   ├── streamlit_app.py        ← Streamlit dashboard
-│   └── flask_api.py            ← Standalone Flask REST API
+│   ├── Frontend.py             ← Frontend dashboard
+│   ├── flask_api.py            ← Standalone Flask REST API
 │
 ├── data/                       ← 📂 Data files (large CSVs git-ignored)
 │   ├── lahore_aqi_historical_2024_onwards.csv   ← Training data
