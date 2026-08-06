@@ -45,8 +45,6 @@ def _sanitize_nan(obj):
 # AQI helpers
 # ─────────────────────────────────────────────
 
-
-
 def aqi_category(aqi):
     if aqi is None: return "Unknown"
     if aqi <= 50: return "Good"
@@ -59,24 +57,66 @@ def aqi_category(aqi):
 # ─────────────────────────────────────────────
 # Data helpers
 # ─────────────────────────────────────────────
+try:
+    import pandas as pd
+    from src.features.fetch_raw import fetch_openmeteo_current_row, fetch_aqicn_current, current_reading_to_row
+except ImportError:
+    pd = None
 
 def _load_history() -> pd.DataFrame | None:
     if not HISTORICAL_CSV.exists():
         return None
     df = pd.read_csv(HISTORICAL_CSV, parse_dates=["timestamp"])
+    
+    # FETCH IN BACKEND: dynamically fetch the latest real-time row
+    try:
+        meteo_row = fetch_openmeteo_current_row()
+        try:
+            aqicn_data = fetch_aqicn_current()
+        except Exception:
+            aqicn_data = None
+        current_row = current_reading_to_row(aqicn_data, meteo_row)
+        
+        # Append the current row if it's newer than the last row in history
+        last_ts = df["timestamp"].max()
+        current_ts = current_row["timestamp"].iloc[0]
+        if current_ts > last_ts:
+            df = pd.concat([df, current_row], ignore_index=True)
+        elif current_ts == last_ts:
+            # Update the latest row with the fresh data
+            for col in current_row.columns:
+                if col in df.columns:
+                    df.loc[df.index[-1], col] = current_row[col].iloc[0]
+    except Exception as e:
+        # If live fetch fails, just fall back to historical CSV data
+        print(f"Warning: Failed to fetch live data: {e}")
+
     return compute_features(df)
 
-def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict, checkpoint_shap: dict = None) -> dict:
-    """Assemble the exact JSON structure the frontend expects."""
 
-    # Current reading from latest ground truth
+
+def _get_rmse_for_horizon(training_meta: dict, day_key: str) -> float | None:
+    rmse_by_horizon = training_meta.get("rmse_by_horizon_aqi", {})
+    horizon_num = day_key.replace("day", "")
+    if horizon_num in rmse_by_horizon:
+        return rmse_by_horizon[horizon_num]
+    
+    if "metrics" in training_meta and day_key in training_meta.get("metrics", {}):
+        best_algo = training_meta.get("best_models", {}).get(day_key)
+        if best_algo and best_algo in training_meta["metrics"][day_key]:
+            rmse_val = training_meta["metrics"][day_key][best_algo].get("rmse")
+            if rmse_val is not None:
+                return rmse_val
+    return None
+
+def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict, checkpoint_shap: dict = None) -> dict:
     valid = history.dropna(subset=["aqi"])
     latest = valid.iloc[-1]
     pm25_now = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0))
-    pm10_now = float(latest.get("modeled_pm10", 0) or 0)
+    pm10_raw = float(latest.get("ground_pm10", 0) or latest.get("modeled_pm10", 0))
+    pm10_now = max(pm10_raw, pm25_now)
     aqi_now = float(latest["aqi"])
 
-    # 24h trend
     cutoff = latest["timestamp"] - pd.Timedelta(hours=24)
     trend_rows = history[history["timestamp"] >= cutoff].dropna(subset=["aqi"])
     trend_24h = [
@@ -84,7 +124,6 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
         for _, r in trend_rows.iterrows()
     ]
 
-    # Build 24h / 48h / 72h checkpoint cards from predictions
     checkpoints = {}
     for h, label in [(24, "24h"), (48, "48h"), (72, "72h")]:
         if len(predictions) >= h:
@@ -93,12 +132,7 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
             pm25_pred = float(row.get("predicted_pm25", 0))
             
             day_key = f"day{h // 24}"
-            rmse_val = None
-            if "metrics" in training_meta and day_key in training_meta["metrics"]:
-                best_algo = training_meta.get("best_models", {}).get(day_key)
-                if best_algo and best_algo in training_meta["metrics"][day_key]:
-                    rmse_val = training_meta["metrics"][day_key][best_algo].get("rmse")
-            
+            rmse_val = _get_rmse_for_horizon(training_meta, day_key)
             shap_feats = checkpoint_shap.get(label, []) if checkpoint_shap else []
 
             checkpoints[label] = {
@@ -108,9 +142,32 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
                 "features": shap_feats,
             }
 
-    # Best model from training_results.json
+    import os
+    
+    # Get file modification times
+    feature_time = "Unknown"
+    try:
+        from src.config import HISTORICAL_CSV
+        if HISTORICAL_CSV.exists():
+            mtime = os.path.getmtime(HISTORICAL_CSV)
+            feature_time = pd.Timestamp(mtime, unit='s').isoformat()
+    except Exception:
+        pass
+        
+    model_time = "Unknown"
+    try:
+        from src.config import MODELS_DIR
+        train_json = MODELS_DIR / "training_results.json"
+        if train_json.exists():
+            mtime = os.path.getmtime(train_json)
+            model_time = pd.Timestamp(mtime, unit='s').isoformat()
+    except Exception:
+        pass
+
     best_models = training_meta.get("best_models", {})
     best_model = ", ".join([f"D{i}: {name.replace('_', ' ').title()}" for i, (d, name) in enumerate(best_models.items(), 1)]) if best_models else training_meta.get("best_model", "random_forest").replace("_", " ").title()
+
+    updated_at_ts = pd.Timestamp.now().isoformat()
 
     return {
         "location": {
@@ -118,7 +175,12 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
             "region": "Punjab",
             "country": "Pakistan",
         },
-        "updated_at": pd.Timestamp.now().isoformat(),
+        "updated_at": updated_at_ts,
+        "pipeline_metrics": {
+            "feature_pipeline_last_run": feature_time,
+            "model_pipeline_last_run": model_time,
+            "prediction_last_run": updated_at_ts
+        },
         "data_note": f"Powered by Best Model: {best_model} · via src pipeline",
         "current": {
             "aqi": aqi_now,
@@ -151,10 +213,6 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
         "rmse_by_horizon_aqi": {k.replace("h", ""): v["rmse_aqi"] for k, v in checkpoints.items() if v.get("rmse_aqi") is not None},
     }
 
-# ─────────────────────────────────────────────
-# Routes
-# ─────────────────────────────────────────────
-
 @app.route("/")
 def index():
     """Serve the AQI dashboard frontend."""
@@ -171,7 +229,6 @@ def dashboard_data():
     training_json = MODELS_DIR / "training_results.json"
 
     if history is None or history.empty or not scaler_exists:
-        # Fall back to pre-generated file from aqi/pipeline.py
         if DATA_JSON.exists():
             with open(DATA_JSON) as f:
                 return jsonify(json.load(f))
@@ -183,12 +240,14 @@ def dashboard_data():
         data = _build_dashboard_json(history, predictions, meta, checkpoint_shap)
         return jsonify(_sanitize_nan(data))
     except Exception as e:
-        # Fall back to pre-generated file
+        import traceback
+        traceback.print_exc()
         if DATA_JSON.exists():
             with open(DATA_JSON) as f:
-                return jsonify(json.load(f))
+                fallback_data = json.load(f)
+                fallback_data["api_error"] = str(e)
+                return jsonify(fallback_data)
         return jsonify({"error": str(e)}), 500
-
 
 @app.route("/api/forecast")
 def forecast_api():

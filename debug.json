@@ -1,0 +1,713 @@
+{
+  "current": {
+    "aqi": 174.0,
+    "category": "Unhealthy",
+    "pollutants": {
+      "co": 1189.0,
+      "no2": 21.1,
+      "ozone": 149.0,
+      "pm10": 95.9,
+      "pm25": 68.0,
+      "so2": 12.4
+    },
+    "timestamp": "2026-08-06 13:00:00",
+    "weather": {
+      "humidity": 69.0,
+      "pressure": 973.5,
+      "temperature": 32.4
+    }
+  },
+  "data_note": "Powered by Best Model: D1: Xgboost, D2: Xgboost, D3: Xgboost \u00b7 via src pipeline",
+  "forecast": [
+    {
+      "day": "Day 1",
+      "features": [
+        {
+          "name": "PM2.5",
+          "val": -0.07
+        },
+        {
+          "name": "Pressure",
+          "val": -0.03
+        },
+        {
+          "name": "Current AQI",
+          "val": 0.03
+        },
+        {
+          "name": "Temperature",
+          "val": 0.02
+        },
+        {
+          "name": "AQI Change Rate",
+          "val": 0.02
+        },
+        {
+          "name": "Ozone (O\u2083)",
+          "val": 0.02
+        },
+        {
+          "name": "Week of Year",
+          "val": 0.02
+        },
+        {
+          "name": "Nitric Oxide (NO)",
+          "val": -0.01
+        },
+        {
+          "name": "Sulfur Dioxide (SO\u2082)",
+          "val": -0.01
+        },
+        {
+          "name": "Month",
+          "val": 0.01
+        },
+        {
+          "name": "Nitrogen Dioxide (NO\u2082)",
+          "val": -0.01
+        },
+        {
+          "name": "Day",
+          "val": -0.01
+        },
+        {
+          "name": "Humidity",
+          "val": 0.0
+        },
+        {
+          "name": "Carbon Monoxide (CO)",
+          "val": -0.0
+        },
+        {
+          "name": "PM10",
+          "val": -0.0
+        },
+        {
+          "name": "Day of Week",
+          "val": 0.0
+        },
+        {
+          "name": "Hour of Day",
+          "val": 0.0
+        }
+      ],
+      "horizon": "24h",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "rmse_aqi": 19.1
+    },
+    {
+      "day": "Day 2",
+      "features": [
+        {
+          "name": "Month",
+          "val": 0.08
+        },
+        {
+          "name": "Week of Year",
+          "val": 0.06
+        },
+        {
+          "name": "Pressure",
+          "val": -0.05
+        },
+        {
+          "name": "AQI Change Rate",
+          "val": 0.03
+        },
+        {
+          "name": "PM2.5",
+          "val": -0.03
+        },
+        {
+          "name": "Day",
+          "val": -0.03
+        },
+        {
+          "name": "Temperature",
+          "val": 0.02
+        },
+        {
+          "name": "Ozone (O\u2083)",
+          "val": 0.02
+        },
+        {
+          "name": "Current AQI",
+          "val": 0.02
+        },
+        {
+          "name": "Humidity",
+          "val": 0.01
+        },
+        {
+          "name": "Nitrogen Dioxide (NO\u2082)",
+          "val": -0.01
+        },
+        {
+          "name": "Hour of Day",
+          "val": 0.01
+        },
+        {
+          "name": "Nitric Oxide (NO)",
+          "val": -0.0
+        },
+        {
+          "name": "Sulfur Dioxide (SO\u2082)",
+          "val": -0.0
+        },
+        {
+          "name": "Carbon Monoxide (CO)",
+          "val": -0.0
+        },
+        {
+          "name": "PM10",
+          "val": -0.0
+        },
+        {
+          "name": "Day of Week",
+          "val": 0.0
+        }
+      ],
+      "horizon": "48h",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "rmse_aqi": 22.7
+    },
+    {
+      "day": "Day 3",
+      "features": [
+        {
+          "name": "Week of Year",
+          "val": 0.1
+        },
+        {
+          "name": "Pressure",
+          "val": -0.06
+        },
+        {
+          "name": "Day",
+          "val": -0.04
+        },
+        {
+          "name": "AQI Change Rate",
+          "val": 0.03
+        },
+        {
+          "name": "Temperature",
+          "val": 0.02
+        },
+        {
+          "name": "Month",
+          "val": 0.02
+        },
+        {
+          "name": "Ozone (O\u2083)",
+          "val": 0.02
+        },
+        {
+          "name": "Current AQI",
+          "val": 0.02
+        },
+        {
+          "name": "Nitric Oxide (NO)",
+          "val": -0.01
+        },
+        {
+          "name": "Humidity",
+          "val": 0.01
+        },
+        {
+          "name": "Sulfur Dioxide (SO\u2082)",
+          "val": -0.01
+        },
+        {
+          "name": "Nitrogen Dioxide (NO\u2082)",
+          "val": -0.01
+        },
+        {
+          "name": "Hour of Day",
+          "val": 0.01
+        },
+        {
+          "name": "PM2.5",
+          "val": -0.01
+        },
+        {
+          "name": "Carbon Monoxide (CO)",
+          "val": -0.0
+        },
+        {
+          "name": "PM10",
+          "val": -0.0
+        },
+        {
+          "name": "Day of Week",
+          "val": 0.0
+        }
+      ],
+      "horizon": "72h",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "rmse_aqi": 23.8
+    }
+  ],
+  "forecast_hourly": [
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 14:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 15:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 16:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 17:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 18:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 19:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 20:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 21:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 22:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Thu, 06 Aug 2026 23:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 00:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 01:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 02:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 03:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 04:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 05:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 06:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 07:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 08:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 09:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 10:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 11:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 12:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy",
+      "predicted_aqi": 157.8,
+      "predicted_pm25": 78.88,
+      "timestamp": "Fri, 07 Aug 2026 13:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 14:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 15:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 16:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 17:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 18:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 19:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 20:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 21:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 22:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Fri, 07 Aug 2026 23:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 00:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 01:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 02:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 03:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 04:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 05:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 06:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 07:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 08:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 09:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 10:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 11:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 12:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 147.6,
+      "predicted_pm25": 73.8,
+      "timestamp": "Sat, 08 Aug 2026 13:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 14:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 15:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 16:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 17:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 18:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 19:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 20:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 21:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 22:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sat, 08 Aug 2026 23:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 00:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 01:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 02:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 03:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 04:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 05:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 06:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 07:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 08:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 09:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 10:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 11:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 12:00:00 GMT"
+    },
+    {
+      "category": "Unhealthy for Sensitive Groups",
+      "predicted_aqi": 144.2,
+      "predicted_pm25": 72.12,
+      "timestamp": "Sun, 09 Aug 2026 13:00:00 GMT"
+    }
+  ],
+  "location": {
+    "country": "Pakistan",
+    "name": "Lahore",
+    "region": "Punjab"
+  },
+  "rmse_by_horizon_aqi": {
+    "24": 19.1,
+    "48": 22.7,
+    "72": 23.8
+  },
+  "trend_24h": [
+    {
+      "aqi": 148.0,
+      "timestamp": "2026-08-06 10:00:00"
+    },
+    {
+      "aqi": 154.0,
+      "timestamp": "2026-08-06 11:00:00"
+    },
+    {
+      "aqi": 174.0,
+      "timestamp": "2026-08-06 13:00:00"
+    }
+  ],
+  "updated_at": "2026-08-06T18:58:41.084720"
+}

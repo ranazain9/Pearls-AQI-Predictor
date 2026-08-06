@@ -2,25 +2,8 @@
 import json
 import pickle
 import pandas as pd
-from src.config import FORECAST_HOURS, MODELS_DIR, TARGET_COLUMN
-from src.features.engineering import aqi_category, compute_features
-
-def load_horizon_artifacts(day: int) -> tuple[object, dict]:
-    """Load scaler and model for a specific horizon day (1, 2, or 3)."""
-    with open(MODELS_DIR / f"scaler_day{day}.pkl", "rb") as f:
-        artifact = pickle.load(f)
-
-    pkl_path = MODELS_DIR / f"best_model_day{day}.pkl"
-    if not pkl_path.exists():
-        raise FileNotFoundError(f"Model for Day {day} not found. Run training first.")
-    with open(pkl_path, "rb") as f:
-        model = pickle.load(f)
-
-    artifact["model"] = model
-    return model, artifact
-
 import numpy as np
-from src.config import FEATURE_COLUMNS, FEATURE_LABELS, FORECAST_HOURS, MODELS_DIR, TARGET_COLUMN
+from src.config import FORECAST_HOURS, MODELS_DIR, TARGET_COLUMN, FEATURE_COLUMNS, FEATURE_LABELS
 from src.features.engineering import aqi_category, clean_features_df, compute_features
 
 
@@ -42,7 +25,7 @@ def load_horizon_artifacts(day: int) -> tuple[object, dict]:
 def compute_shap_explanations(model: object, X_scaled: np.ndarray, feature_cols: list[str]) -> list[dict]:
     """
     Compute SHAP values (or feature contribution fallback) for input vector X_scaled.
-    Returns list of dicts [{"name": label, "value": float}, ...] sorted by absolute contribution.
+    Returns list of dicts [{"name": label, "val": float}, ...] sorted by absolute contribution.
     """
     shap_vals = None
     try:
@@ -74,9 +57,10 @@ def compute_shap_explanations(model: object, X_scaled: np.ndarray, feature_cols:
     feats_sorted = []
     for col, val in zip(feature_cols, shap_vals):
         label = FEATURE_LABELS.get(col, col)
-        feats_sorted.append({"name": label, "value": round(float(val), 2)})
+        # FIXED: Use "val" instead of "value" for consistency
+        feats_sorted.append({"name": label, "val": round(float(val), 2)})
 
-    feats_sorted.sort(key=lambda x: abs(x["value"]), reverse=True)
+    feats_sorted.sort(key=lambda x: abs(x["val"]), reverse=True)
     return feats_sorted
 
 
@@ -107,15 +91,16 @@ def predict_next_3_days_with_shap(history: pd.DataFrame) -> tuple[pd.DataFrame, 
     for h in range(1, FORECAST_HOURS + 1):
         target_time = latest_time + pd.Timedelta(hours=h)
         
+        # FIXED: Use latest available data for feature extraction
+        # Each model looks at the current state to predict future
+        lookup_time = featured["timestamp"].max()
+        
         if h <= 24:
             day = 1
-            lookup_time = target_time - pd.Timedelta(hours=24)
         elif h <= 48:
             day = 2
-            lookup_time = target_time - pd.Timedelta(hours=48)
         else:
             day = 3
-            lookup_time = target_time - pd.Timedelta(hours=72)
             
         if lookup_time in featured.index:
             feat_row = featured.loc[lookup_time]
@@ -133,14 +118,29 @@ def predict_next_3_days_with_shap(history: pd.DataFrame) -> tuple[pd.DataFrame, 
             pred = float(models[day].predict(X_scaled)[0])
             pred = max(0.0, pred)
 
+            # FIXED: Compute SHAP for checkpoints (this ensures features are populated)
             if h in checkpoint_hours:
                 checkpoint_shap[checkpoint_hours[h]] = compute_shap_explanations(
                     models[day], X_scaled, feature_cols[day]
                 )
         else:
+            # Fallback if lookup fails
             pred = float(featured["aqi"].iloc[-1] if not featured["aqi"].empty else 100.0)
             if h in checkpoint_hours:
-                checkpoint_shap[checkpoint_hours[h]] = []
+                # CRITICAL FIX: Still try to compute SHAP with latest available data
+                try:
+                    feat_row = featured.iloc[-1]
+                    X_dict = {col: feat_row.get(col, 0.0) for col in feature_cols[day]}
+                    for col in X_dict:
+                        if pd.isna(X_dict[col]):
+                            X_dict[col] = 0.0
+                    X_df = pd.DataFrame([X_dict])[feature_cols[day]]
+                    X_scaled = scalers[day].transform(X_df)
+                    checkpoint_shap[checkpoint_hours[h]] = compute_shap_explanations(
+                        models[day], X_scaled, feature_cols[day]
+                    )
+                except Exception:
+                    checkpoint_shap[checkpoint_hours[h]] = []
 
         predictions.append(
             {
@@ -158,4 +158,3 @@ def predict_next_3_days(history: pd.DataFrame) -> pd.DataFrame:
     """Wrapper returning dataframe predictions for backward compatibility."""
     preds_df, _ = predict_next_3_days_with_shap(history)
     return preds_df
-
