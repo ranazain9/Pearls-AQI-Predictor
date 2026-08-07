@@ -16,3 +16,7 @@ python-dotenv
 # insertion, use Linux or WSL (Python 3.11 or 3.12 recommended); native Windows
 # supports local processing/CSV persistence but not this remote write transport.
 hopsworks[python]>=5.0,<6.0
+
+# Frontend Dashboard
+streamlit
+plotly

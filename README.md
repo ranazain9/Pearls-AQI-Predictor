@@ -78,11 +78,17 @@ python pipeline/training_pipeline.py --register
 ```
 This fetches live weather + air quality data, trains 3 models (Random Forest, Ridge, TensorFlow), picks the best one by RMSE, and exports `data/aqi_dashboard_data.json`.
 
-### 4. Launch the Flask dashboard
+### 4. Launch the Dashboard
+We offer a premium, interactive Streamlit dashboard. Ensure the Flask API is running in the background for live data:
+
 ```bash
+# Terminal 1: Run the backend API
 python app/flask_api.py
+
+# Terminal 2: Run the frontend
+streamlit run app/streamlit_app.py
 ```
-Open **http://127.0.0.1:5000** in your browser.
+Open **http://localhost:8501** in your browser.
 
 ---
 
@@ -103,19 +109,11 @@ jupyter notebook notebooks/model.ipynb
 
 ## 📊 Frontends & API Endpoints
 
-### Option A — `aqi/app.py` (fast, uses pre-generated data)  -  (optional)
+### Option A — `app/streamlit_app.py` (Premium UI - Recommended)
 ```bash
-python aqi/pipeline.py   # generates data/aqi_dashboard_data.json first
-python aqi/app.py        # serves it at http://127.0.0.1:5000
+streamlit run app/streamlit_app.py
 ```
-
-| Endpoint | Description |
-|----------|-------------|
-| `GET /` | Dashboard UI |
-| `GET /api/data` | Full dashboard JSON |
-| `GET /api/forecast` | Hourly 72h forecast CSV as JSON |
-
----
+> A stunning, responsive, dark-theme Streamlit dashboard featuring live AQI metrics, dynamic 72-hour forecast charts, and interactive SHAP tabs to explain model predictions for each horizon.
 
 ### Option B — `app/flask_api.py` (live inference via `src/` pipeline)    (main-file)
 ```bash
@@ -143,6 +141,13 @@ python app/flask_api.py   # serves at http://127.0.0.1:5000
 
 ---
 
+## 🌐 Deployment
+This project is production-ready and configured for serverless deployments:
+- **Frontend (Streamlit)**: Easily deployable to [Hugging Face Spaces](https://huggingface.co/spaces) or [Streamlit Community Cloud](https://share.streamlit.io/).
+- **Backend (Flask API)**: Configured for deployment on [Vercel](https://vercel.com/) via the included `vercel.json`.
+
+---
+
 ## 🛠 Technology Stack
 
 | Component | Technology |
@@ -152,5 +157,5 @@ python app/flask_api.py   # serves at http://127.0.0.1:5000
 | ML Models | Random Forest, Ridge Regression, TensorFlow/Keras |
 | Explainability | SHAP |
 | CI/CD | GitHub Actions |
-| Frontend | HTML + Chart.js + vanilla CSS (`aqi/frontend.html`) |
-| Backend | Flask (`aqi/app.py` or `app/flask_api.py`) |
+| Frontend | Streamlit (`app/streamlit_app.py`) |
+| Backend | Flask (`app/flask_api.py`) |

@@ -112,6 +112,22 @@ DATA_JSON = ROOT / "data" / "aqi_dashboard_data.json"
 TRAINING_JSON = MODELS_DIR / "training_results.json"
 
 def _load_history() -> pd.DataFrame:
+    import hopsworks
+    import os
+    
+    api_key = os.getenv("HOPSWORKS_API_KEY")
+    if api_key:
+        try:
+            project = hopsworks.login(api_key_value=api_key)
+            fs = project.get_feature_store()
+            fg = fs.get_feature_group("lahore_aqi_features", version=2)
+            df = fg.read()
+            if len(df) > 0:
+                print("Successfully loaded features from Hopsworks.")
+                return compute_features(df)
+        except Exception as e:
+            print(f"Failed to load features from Hopsworks: {e}. Falling back to local.")
+            
     if not HISTORICAL_CSV.exists():
         raise FileNotFoundError(f"Historical data not found at {HISTORICAL_CSV}")
     df = pd.read_csv(HISTORICAL_CSV, parse_dates=["timestamp"])

@@ -58,7 +58,7 @@ def run_feature_pipeline(upload_to_hopsworks: bool = False) -> pd.DataFrame:
     featured.to_csv(HISTORICAL_CSV, index=False)
 
     if upload_to_hopsworks:
-        _upload_to_hopsworks(featured)
+            _upload_to_hopsworks(featured)
 
     return featured
 

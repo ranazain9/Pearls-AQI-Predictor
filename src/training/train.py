@@ -209,8 +209,18 @@ def _register_models_hopsworks(model_dir, metadata: dict) -> None:
 
     project = hopsworks.login(api_key_value=api_key)
     mr = project.get_model_registry()
+    
+    # Force version 1 by deleting it if it already exists
+    try:
+        old_model = mr.get_model(MODEL_REGISTRY_NAME, version=1)
+        old_model.delete()
+        print("Deleted old version=1 model to keep history clean.")
+    except Exception:
+        pass
+        
     registered = mr.python.create_model(
         name=MODEL_REGISTRY_NAME,
+        version=1,
         metrics=metadata["best_metrics"],
         description="Direct multi-horizon AQI forecasting models (Day 1, 2, 3).",
     )

@@ -8,7 +8,33 @@ from src.features.engineering import aqi_category, clean_features_df, compute_fe
 
 
 def load_horizon_artifacts(day: int) -> tuple[object, dict]:
-    """Load scaler and model for a specific horizon day (1, 2, or 3)."""
+    """Load scaler and model for a specific horizon day (1, 2, or 3) from Hopsworks or local fallback."""
+    import os
+    import hopsworks
+    
+    artifact, model = None, None
+    api_key = os.getenv("HOPSWORKS_API_KEY")
+    
+    if api_key:
+        try:
+            from src.config import MODEL_REGISTRY_NAME
+            project = hopsworks.login(api_key_value=api_key)
+            mr = project.get_model_registry()
+            # Fetch version=1 as enforced by training pipeline
+            hw_model = mr.get_model(MODEL_REGISTRY_NAME, version=1)
+            model_dir = hw_model.download()
+            
+            with open(f"{model_dir}/scaler_day{day}.pkl", "rb") as f:
+                artifact = pickle.load(f)
+            with open(f"{model_dir}/best_model_day{day}.pkl", "rb") as f:
+                model = pickle.load(f)
+                
+            artifact["model"] = model
+            return model, artifact
+        except Exception as e:
+            print(f"Failed to load from Hopsworks, falling back to local: {e}")
+
+    # Fallback to local files
     with open(MODELS_DIR / f"scaler_day{day}.pkl", "rb") as f:
         artifact = pickle.load(f)
 
