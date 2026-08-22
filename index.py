@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_file, request
 
 app = Flask(__name__)
 ROOT = Path(__file__).resolve().parent
@@ -35,6 +35,8 @@ def _find_frontend_html():
     return None
 
 @app.route("/")
+@app.route("/index.py")
+@app.route("/index.html")
 def home():
     """Serve the frontend dashboard."""
     html_path = _find_frontend_html()
@@ -43,6 +45,7 @@ def home():
     return "<h1>Pearls AQI Predictor Dashboard</h1>", 200
 
 @app.route("/api/data")
+@app.route("/data/aqi_dashboard_data.json")
 def get_data():
     """Serve the pre-computed AQI dashboard JSON."""
     json_path = _find_data_json()

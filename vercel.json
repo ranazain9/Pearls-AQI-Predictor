@@ -1,11 +1,3 @@
 {
-  "version": 2,
-  "functions": {
-    "index.py": {
-      "includeFiles": "data/**,index.html,app/**"
-    }
-  },
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.py" }
-  ]
+  "version": 2
 }
