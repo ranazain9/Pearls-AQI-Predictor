@@ -1,2 +1,14 @@
+[project]
+name = "pearls-aqi-predictor"
+version = "0.1.0"
+description = "Pearls AQI Predictor"
+requires-python = ">=3.10"
+dependencies = [
+    "flask",
+    "gunicorn",
+    "requests",
+    "python-dotenv"
+]
+
 [tool.vercel]
 entrypoint = "index:app"
