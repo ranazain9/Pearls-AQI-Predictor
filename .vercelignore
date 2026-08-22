@@ -1,0 +1,9 @@
+.venv/
+.venv311/
+.venv313/
+archive/
+models/
+notebooks/
+tests/
+__pycache__/
+*.csv

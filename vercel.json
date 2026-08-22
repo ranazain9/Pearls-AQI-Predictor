@@ -1,15 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "app/flask_api.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "app/flask_api.py"
-    }
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api/data", "destination": "/data/aqi_dashboard_data.json" },
+    { "source": "/", "destination": "/app/frontend.html" }
   ]
 }
