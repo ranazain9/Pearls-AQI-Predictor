@@ -99,6 +99,29 @@ def aqi_category(aqi: float) -> str:
     return "Hazardous"
 
 
+def aqi_to_pm25(aqi: float) -> float:
+    """Convert US AQI value to PM2.5 concentration (ug/m3) using standard EPA breakpoints."""
+    if aqi is None or pd.isna(aqi):
+        return 0.0
+    aqi = float(aqi)
+    if aqi < 0:
+        return 0.0
+    elif aqi <= 50:
+        return round((aqi / 50.0) * 12.0, 2)
+    elif aqi <= 100:
+        return round(12.1 + ((aqi - 51.0) / (100.0 - 51.0)) * (35.4 - 12.1), 2)
+    elif aqi <= 150:
+        return round(35.5 + ((aqi - 101.0) / (150.0 - 101.0)) * (55.4 - 35.5), 2)
+    elif aqi <= 200:
+        return round(55.5 + ((aqi - 151.0) / (200.0 - 151.0)) * (150.4 - 55.5), 2)
+    elif aqi <= 300:
+        return round(150.5 + ((aqi - 201.0) / (300.0 - 201.0)) * (250.4 - 150.5), 2)
+    elif aqi <= 500:
+        return round(250.5 + ((aqi - 301.0) / (500.0 - 301.0)) * (500.4 - 250.5), 2)
+    else:
+        return round(500.4 + (aqi - 500.0) * 0.5, 2)
+
+
 def pm25_to_aqi_category(pm25: float) -> str:
     """Backward-compatible alias for AQI category labels."""
     return aqi_category(pm25)

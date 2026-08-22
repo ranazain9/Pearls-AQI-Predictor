@@ -4,45 +4,49 @@ import pickle
 import pandas as pd
 import numpy as np
 from src.config import FORECAST_HOURS, MODELS_DIR, TARGET_COLUMN, FEATURE_COLUMNS, FEATURE_LABELS
-from src.features.engineering import aqi_category, clean_features_df, compute_features
+from src.features.engineering import aqi_category, aqi_to_pm25, clean_features_df, compute_features
 
 
 def load_horizon_artifacts(day: int) -> tuple[object, dict]:
-    """Load scaler and model for a specific horizon day (1, 2, or 3) from Hopsworks or local fallback."""
+    """Load scaler and model for a specific horizon day (1, 2, or 3) from local or Hopsworks."""
     import os
-    import hopsworks
-    
-    artifact, model = None, None
+
+    pkl_path = MODELS_DIR / f"best_model_day{day}.pkl"
+    scaler_path = MODELS_DIR / f"scaler_day{day}.pkl"
+
+    # If local model artifacts exist, load them immediately (fastest, 0 ms latency, no 280MB cloud download)
+    if pkl_path.exists() and scaler_path.exists():
+        with open(scaler_path, "rb") as f:
+            artifact = pickle.load(f)
+        with open(pkl_path, "rb") as f:
+            model = pickle.load(f)
+        artifact["model"] = model
+        return model, artifact
+
     api_key = os.getenv("HOPSWORKS_API_KEY")
-    
     if api_key:
         try:
+            import hopsworks
             from src.config import MODEL_REGISTRY_NAME
             project = hopsworks.login(api_key_value=api_key)
             mr = project.get_model_registry()
             # Fetch version=1 as enforced by training pipeline
             hw_model = mr.get_model(MODEL_REGISTRY_NAME, version=1)
             model_dir = hw_model.download()
-            
+
             with open(f"{model_dir}/scaler_day{day}.pkl", "rb") as f:
                 artifact = pickle.load(f)
             with open(f"{model_dir}/best_model_day{day}.pkl", "rb") as f:
                 model = pickle.load(f)
-                
+
             artifact["model"] = model
             return model, artifact
+        except ImportError:
+            pass
         except Exception as e:
             print(f"Failed to load from Hopsworks, falling back to local: {e}")
 
-    # Fallback to local files
-    with open(MODELS_DIR / f"scaler_day{day}.pkl", "rb") as f:
-        artifact = pickle.load(f)
-
-    pkl_path = MODELS_DIR / f"best_model_day{day}.pkl"
-    if not pkl_path.exists():
-        raise FileNotFoundError(f"Model for Day {day} not found. Run training first.")
-    with open(pkl_path, "rb") as f:
-        model = pickle.load(f)
+    raise FileNotFoundError(f"Model for Day {day} not found. Run training first.")
 
     artifact["model"] = model
     return model, artifact
@@ -171,7 +175,7 @@ def predict_next_3_days_with_shap(history: pd.DataFrame) -> tuple[pd.DataFrame, 
         predictions.append(
             {
                 "timestamp": target_time,
-                "predicted_pm25": round(pred * 0.5, 2),
+                "predicted_pm25": aqi_to_pm25(pred),
                 "predicted_aqi": round(pred, 1),
                 "category": aqi_category(pred),
             }
