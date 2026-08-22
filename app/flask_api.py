@@ -78,8 +78,9 @@ def _load_history() -> pd.DataFrame | None:
         current_row = current_reading_to_row(aqicn_data, meteo_row)
         
         # Append the current row if it's newer than the last row in history
-        last_ts = df["timestamp"].max()
-        current_ts = current_row["timestamp"].iloc[0]
+        last_ts = pd.to_datetime(df["timestamp"].max())
+        current_ts = pd.to_datetime(current_row["timestamp"].iloc[0])
+        current_row["timestamp"] = current_ts
         if current_ts > last_ts:
             df = pd.concat([df, current_row], ignore_index=True)
         elif current_ts == last_ts:
