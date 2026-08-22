@@ -8,8 +8,10 @@ ROOT = Path(__file__).resolve().parent
 @app.route("/")
 def home():
     """Serve the frontend dashboard."""
-    frontend_path = ROOT / "app" / "frontend.html"
-    return send_file(frontend_path)
+    index_path = ROOT / "index.html"
+    if not index_path.exists():
+        index_path = ROOT / "app" / "frontend.html"
+    return send_file(index_path)
 
 @app.route("/api/data")
 def get_data():

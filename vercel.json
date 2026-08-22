@@ -1,8 +1,6 @@
 {
   "version": 2,
-  "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/data", "destination": "/data/aqi_dashboard_data.json" },
-    { "source": "/health", "destination": "/data/aqi_dashboard_data.json" }
+    { "source": "/(.*)", "destination": "/index.py" }
   ]
 }
