@@ -1078,7 +1078,17 @@
                 };
             });
 
-            const forecastTrendLabels = forecastHourlyList.map((_, i) => `+${i + 1}h`);
+            const forecastTrendLabels = forecastHourlyList.map((h, i) => {
+                if (h && h.timestamp) {
+                    const d = new Date(h.timestamp);
+                    if (!isNaN(d.getTime())) {
+                        const dayStr = d.toLocaleDateString([], { weekday: 'short' });
+                        const hourStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        return `${dayStr} ${hourStr}`;
+                    }
+                }
+                return `+${i + 1}h`;
+            });
             const forecastTrendValues = forecastHourlyList.map(h => Math.round(h.predicted_aqi || h.aqi || 0));
 
             const updatedDate = raw.updated_at ? new Date(raw.updated_at) : new Date();
@@ -1106,6 +1116,7 @@
                     max: Math.round(maxVal)
                 },
                 forecast: forecast,
+                forecast_hourly: forecastHourlyList,
                 forecastTrend: {
                     labels: forecastTrendLabels.length ? forecastTrendLabels : ["Today", "+24h", "+48h", "+72h"],
                     values: forecastTrendValues.length ? forecastTrendValues : forecast.map(f => f.predicted_aqi)
@@ -1115,20 +1126,56 @@
         }
 
         async function fetchDashboardData() {
+            let json = null;
+            const t = new Date().getTime();
+
+            // Tier 1: Fetch from /api/data (Flask API / Vercel API rewrite)
             try {
-                // Add a cache-busting query parameter to force a fresh fetch
-                const response = await fetch(`/api/data?t=${new Date().getTime()}`);
-                if (!response.ok) throw new Error('Network response was not ok');
+                const response = await fetch(`/api/data?t=${t}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && !data.error && data.current) {
+                        json = data;
+                    }
+                }
+            } catch (e) {
+                console.warn("Primary /api/data endpoint unavailable, trying static JSON fallback...", e);
+            }
 
-                const json = await response.json();
-                if (json.error) throw new Error(json.error);
+            // Tier 2: Fetch directly from static JSON file path
+            if (!json) {
+                const fallbacks = [
+                    `../data/aqi_dashboard_data.json?t=${t}`,
+                    `/data/aqi_dashboard_data.json?t=${t}`,
+                    `./data/aqi_dashboard_data.json?t=${t}`
+                ];
+                for (const url of fallbacks) {
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data && !data.error && data.current) {
+                                json = data;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // continue to next fallback
+                    }
+                }
+            }
 
+            if (!json) {
+                throw new Error("Unable to load AQI dashboard data from server or local JSON.");
+            }
+
+            try {
                 DATA = adaptApiResponse(json);
                 renderDashboard();
-                showToast('Air quality data updated', 'success');
+                showToast('Air quality data updated successfully', 'success');
             } catch (err) {
-                console.error("Failed to load dashboard data:", err);
-                showToast(`Failed to load live data: ${err.message}`, 'error');
+                console.error("Failed to render dashboard data:", err);
+                showToast(`Failed to parse live data: ${err.message}`, 'error');
             } finally {
                 setSkeletonState(false);
             }
@@ -1194,9 +1241,10 @@
             statusPill.style.background = `${cat.hex}22`;
             statusPill.style.color = cat.hex;
             document.getElementById('statusDot').style.background = cat.hex;
-            document.getElementById('heroTitle').textContent = `Air Quality is ${cat.label}`;
+            const statusLabel = document.getElementById('statusLabel');
+            if (statusLabel) statusLabel.textContent = cat.label;
             document.getElementById('heroDesc').textContent = DATA.current.desc;
-            document.getElementById('heroGuidance').textContent = DATA.current.guidance;
+            document.getElementById('heroGuidance').innerHTML = DATA.current.guidance;
             document.getElementById('trendChipText').textContent = DATA.current.trendText;
 
             const pGrid = document.getElementById('pollutantGrid');
@@ -1288,7 +1336,7 @@
         function renderForecastCards() {
             const grid = document.getElementById('forecastGrid');
             grid.innerHTML = DATA.forecast.map(f => {
-                const c = catFor(f.predicted_aqi);  // ✅ FIXED: Use predicted_aqi
+                const c = catFor(f.predicted_aqi);
                 return `
                     <div class="forecast-card" style="--bar-color: ${c.hex}">
                         <div class="fc-top">
@@ -1298,6 +1346,10 @@
                         <div class="fc-category" style="color:${c.hex}">${c.label}</div>
                         <div class="fc-value" style="color:${c.hex}">${f.predicted_aqi}</div>
                         <div class="fc-value-label">Predicted AQI</div>
+                        <div class="fc-rmse" style="margin-top: 10px; margin-bottom: 4px;">
+                            <span>Est. PM2.5</span>
+                            <b>${f.predicted_pm25 ? f.predicted_pm25 + ' µg/m³' : '—'}</b>
+                        </div>
                         <div class="fc-rmse">
                             <span>Model Error (RMSE)</span>
                             <b>${typeof f.rmse_aqi === 'number' ? '±' + f.rmse_aqi : f.rmse_aqi}</b>
