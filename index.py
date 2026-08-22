@@ -1,24 +1,53 @@
 import json
+import os
 from pathlib import Path
 from flask import Flask, jsonify, send_file
 
 app = Flask(__name__)
 ROOT = Path(__file__).resolve().parent
 
+def _find_data_json():
+    candidates = [
+        ROOT / "data" / "aqi_dashboard_data.json",
+        Path.cwd() / "data" / "aqi_dashboard_data.json",
+        Path(__file__).parent / "data" / "aqi_dashboard_data.json",
+        Path("/var/task/data/aqi_dashboard_data.json")
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
+
+def _find_frontend_html():
+    candidates = [
+        ROOT / "index.html",
+        ROOT / "app" / "frontend.html",
+        Path.cwd() / "index.html",
+        Path.cwd() / "app" / "frontend.html",
+        Path(__file__).parent / "index.html",
+        Path(__file__).parent / "app" / "frontend.html",
+        Path("/var/task/index.html"),
+        Path("/var/task/app/frontend.html")
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
+
 @app.route("/")
 def home():
     """Serve the frontend dashboard."""
-    index_path = ROOT / "index.html"
-    if not index_path.exists():
-        index_path = ROOT / "app" / "frontend.html"
-    return send_file(index_path)
+    html_path = _find_frontend_html()
+    if html_path and html_path.exists():
+        return send_file(html_path)
+    return "<h1>Pearls AQI Predictor Dashboard</h1>", 200
 
 @app.route("/api/data")
 def get_data():
     """Serve the pre-computed AQI dashboard JSON."""
-    data_path = ROOT / "data" / "aqi_dashboard_data.json"
-    if data_path.exists():
-        with open(data_path, "r", encoding="utf-8") as f:
+    json_path = _find_data_json()
+    if json_path and json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
             return jsonify(json.load(f))
     return jsonify({"error": "Dashboard data not found"}), 404
 

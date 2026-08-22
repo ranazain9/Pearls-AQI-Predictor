@@ -1,9 +1,11 @@
 {
   "version": 2,
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.py"
+  "functions": {
+    "index.py": {
+      "includeFiles": "data/**,index.html,app/**"
     }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.py" }
   ]
 }
