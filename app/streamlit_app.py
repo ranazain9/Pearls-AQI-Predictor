@@ -498,23 +498,37 @@ def fetch_dashboard_data() -> Dict[str, Any]:
     import json
     import os
 
+    from pathlib import Path
+    local_json_path = Path(__file__).resolve().parent.parent / "data" / "aqi_dashboard_data.json"
     api_url = os.environ.get("API_URL", "http://127.0.0.1:5000/api/data")
 
-    # Exactly matching frontend.html: fetch from API endpoint and load JSON
     raw_data = None
-    try:
-        # Increased timeout to 30s because the model inference takes a few seconds to run
-        res = requests.get(api_url, timeout=30)
-        if res.ok:
-            raw_data = res.json()
-        else:
-            raw_data = {"error": f"HTTP error! status: {res.status_code}"}
-    except Exception as e:
-        raw_data = {"error": str(e)}
-    if not raw_data or "error" in raw_data:
-            error_msg = raw_data.get("error", "Unknown error") if raw_data else "Failed to connect to pipeline"
-            st.error(f"❌ Failed to load live data: {error_msg}")
-            st.stop()
+
+    # 1. First priority: Load fresh static JSON directly (instant, 0 ms latency, no 500 errors)
+    if local_json_path.exists():
+        try:
+            with open(local_json_path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if loaded and "current" in loaded and loaded.get("current"):
+                    raw_data = loaded
+        except Exception:
+            pass
+
+    # 2. Second priority: If local JSON not found, fetch from live API
+    if not raw_data:
+        try:
+            res = requests.get(api_url, timeout=5)
+            if res.ok:
+                raw_data = res.json()
+            else:
+                raw_data = {"error": f"HTTP error! status: {res.status_code}"}
+        except Exception as e:
+            raw_data = {"error": str(e)}
+
+    if not raw_data or "error" in raw_data or not raw_data.get("current"):
+        error_msg = raw_data.get("error", "Unknown error") if raw_data else "Failed to load dashboard data"
+        st.error(f"❌ Failed to load dashboard data: {error_msg}")
+        st.stop()
 
     curr = raw_data.get("current", {})
     loc = raw_data.get("location", {})
@@ -1020,7 +1034,7 @@ def main():
             render_stat_card("24h Max", str(data['trend_max']), "AQI")
 
     with col2:
-        st.plotly_chart(create_advanced_gauge(data['current_aqi']), use_container_width=False, config={'displayModeBar': False})
+        st.plotly_chart(create_advanced_gauge(data['current_aqi']), width="content", config={'displayModeBar': False})
 
     st.divider()
 
@@ -1103,21 +1117,21 @@ def main():
         with tab1:
             features = shap_map.get('24h', {}).get('features', [])
             if features:
-                st.plotly_chart(create_shap_chart(features), use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(create_shap_chart(features), width="stretch", config={'displayModeBar': False})
             else:
                 render_guidance_banner("Feature impact data is not available for this horizon.", COLORS['text_tertiary'])
         
         with tab2:
             features = shap_map.get('48h', {}).get('features', [])
             if features:
-                st.plotly_chart(create_shap_chart(features), use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(create_shap_chart(features), width="stretch", config={'displayModeBar': False})
             else:
                 render_guidance_banner("Feature impact data is not available for this horizon.", COLORS['text_tertiary'])
                 
         with tab3:
             features = shap_map.get('72h', {}).get('features', [])
             if features:
-                st.plotly_chart(create_shap_chart(features), use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(create_shap_chart(features), width="stretch", config={'displayModeBar': False})
             else:
                 render_guidance_banner("Feature impact data is not available for this horizon.", COLORS['text_tertiary'])
     else:
