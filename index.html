@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pearls AQI Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-deep: #12161C;
+            --surface: #1B212B;
+            --surface-alt: #212836;
+            --border: #2A3140;
+            --text-primary: #EDEFF2;
+            --text-muted: #8B93A1;
+            --text-faint: #5A6273;
+            --accent-amber: #E8A33D;
+
+            --c-good: #4CAF7D;
+            --c-moderate: #D9C24C;
+            --c-usg: #E8A33D;
+            --c-unhealthy: #E2673B;
+            --c-very-unhealthy: #A15CC4;
+            --c-hazardous: #8B2E3E;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background:
+                radial-gradient(ellipse 900px 500px at 15% -10%, rgba(232, 163, 61, 0.07), transparent 60%),
+                radial-gradient(ellipse 700px 500px at 90% 10%, rgba(161, 92, 196, 0.05), transparent 60%),
+                var(--bg-deep);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 28px 20px 60px;
+            overflow-x: hidden;
+        }
+
+        html {
+            overflow-x: hidden;
+        }
+
+        .wrap {
+            width: 100%;
+            max-width: 2200px;
+            margin: 0 auto;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 22px;
+            align-items: stretch;
+        }
+
+        .dash-item {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .dash-item>.card {
+            flex: 1 1 auto;
+        }
+
+        .span-7 {
+            grid-column: span 7;
+        }
+
+        .span-5 {
+            grid-column: span 5;
+        }
+
+        .span-12 {
+            grid-column: span 12;
+        }
+
+        @media (max-width: 1100px) {
+
+            .span-7,
+            .span-5,
+            .span-12 {
+                grid-column: span 12;
+            }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-amber), #C97A2B);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #12161C;
+        }
+
+        .brand-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .brand-text p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+
+        .header-right {
+            min-width: 0;
+            text-align: right;
+        }
+
+        .location {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .location-sub {
+            font-size: 11.5px;
+            color: var(--text-faint);
+            margin-top: 2px;
+        }
+
+        .refresh-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .updated {
+            font-size: 11px;
+            color: var(--text-faint);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .refresh-btn {
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 11px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: 'Inter', sans-serif;
+            transition: all .15s;
+        }
+
+        .refresh-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--accent-amber);
+        }
+
+        .refresh-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .refresh-btn.spinning svg {
+            animation: spin .7s linear infinite;
+        }
+
+        .refresh-btn:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
+
+        .refresh-btn.success {
+            color: var(--c-good);
+            border-color: var(--c-good);
+        }
+
+        .refresh-btn.fail {
+            color: var(--c-unhealthy);
+            border-color: var(--c-unhealthy);
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #toastStack {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 999;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            animation: slideIn .22s ease-out;
+        }
+
+        .toast.success {
+            border-color: var(--c-good);
+            background: linear-gradient(135deg, rgba(76, 175, 125, 0.1), rgba(76, 175, 125, 0.05));
+        }
+
+        .toast.error {
+            border-color: var(--c-unhealthy);
+            background: linear-gradient(135deg, rgba(226, 103, 59, 0.1), rgba(226, 103, 59, 0.05));
+        }
+
+        .toast.leaving {
+            animation: slideOut .22s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes slideOut {
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px;
+        }
+
+        .card.full-height {
+            height: 100%;
+        }
+
+        .card h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, rgba(232, 163, 61, 0.08), rgba(161, 92, 196, 0.04));
+            border: 1px solid rgba(232, 163, 61, 0.2);
+        }
+
+        .hero-content {
+            display: flex;
+            gap: 36px;
+            align-items: center;
+        }
+
+        @media (max-width: 800px) {
+            .hero-content {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
+
+        .gauge {
+            flex-shrink: 0;
+        }
+
+        .gauge-svg {
+            width: 120px;
+            height: 120px;
+        }
+
+        #gaugeArc {
+            transition: stroke-dashoffset .6s ease-out, stroke .3s ease;
+        }
+
+        .gauge-labels {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .gauge-labels svg {
+            width: 120px;
+            height: 120px;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .hero-text h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 26px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .hero-text p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 14px;
+            line-height: 1.5;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .hero-guidance {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-muted);
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid var(--accent-amber);
+            border-radius: 4px;
+        }
+
+        .hero-guidance b {
+            color: var(--text-primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--accent-amber);
+        }
+
+        .stat-value.skeleton {
+            background: var(--border);
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        .pollutant {
+            text-align: center;
+            padding: 8px;
+        }
+
+        .pollutant-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-amber);
+        }
+
+        .pollutant-unit {
+            font-size: 10px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        .pollutant-name {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .weather-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .weather-item:last-child {
+            border-bottom: none;
+        }
+
+        .wl {
+            color: var(--text-muted);
+        }
+
+        .wv {
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .trend-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(76, 175, 125, 0.15);
+            border: 1px solid rgba(76, 175, 125, 0.3);
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--c-good);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        .trend-chip.negative {
+            background: rgba(226, 103, 59, 0.15);
+            border-color: rgba(226, 103, 59, 0.3);
+            color: var(--c-unhealthy);
+        }
+
+        .trend-chip.neutral {
+            background: rgba(139, 147, 161, 0.15);
+            border-color: rgba(139, 147, 161, 0.3);
+            color: var(--text-muted);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        #trendChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        #forecastChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 0;
+        }
+
+        @media (max-width: 900px) {
+            .forecast-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .forecast-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .forecast-card {
+            background: linear-gradient(135deg, var(--surface-alt), var(--surface));
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--bar-color, var(--accent-amber));
+            border-radius: 10px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .forecast-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, var(--bar-color, var(--accent-amber)), transparent);
+            opacity: 0.5;
+        }
+
+        .fc-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .fc-day {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .fc-horizon {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--text-faint);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 3px 7px;
+            border-radius: 4px;
+        }
+
+        .fc-category {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .fc-value {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+
+        .fc-value-label {
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-bottom: 12px;
+        }
+
+        .fc-rmse {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+        }
+
+        .fc-rmse span {
+            color: var(--text-faint);
+        }
+
+        .fc-rmse b {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .shap-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        .shap-tab {
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            transition: all .2s;
+        }
+
+        .shap-tab:hover {
+            background: var(--surface-alt);
+            color: var(--text-primary);
+        }
+
+        .shap-tab.active {
+            background: var(--accent-amber);
+            color: #12161C;
+        }
+
+        .shap-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .ss-group {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .ss-label {
+            font-size: 10px;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .ss-value {
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .ss-value.skeleton {
+            background: var(--border);
+            height: 22px;
+            border-radius: 4px;
+        }
+
+        .shap-bar-row {
+            display: grid;
+            grid-template-columns: 100px 1fr 60px;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
+            font-size: 12px;
+        }
+
+        .shap-feature {
+            font-weight: 500;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .shap-track {
+            position: relative;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .shap-center-line {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--border);
+            z-index: 0;
+        }
+
+        .shap-fill {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        .shap-fill.pos {
+            background: linear-gradient(90deg, transparent, var(--c-unhealthy));
+        }
+
+        .shap-fill.neg {
+            background: linear-gradient(270deg, transparent, var(--c-good));
+        }
+
+        .shap-val {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: right;
+            color: var(--text-muted);
+        }
+
+        .shap-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+            color: var(--text-faint);
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .shap-legend span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .lg-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-faint);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header>
+            <div class="brand">
+                <div class="brand-mark">P</div>
+                <div class="brand-text">
+                    <h1>Pearls AQI</h1>
+                    <p>Air Quality Predictor</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="location" id="headerLocation">Lahore</div>
+                <div class="location-sub" id="headerRegion">Punjab, Pakistan</div>
+                <div class="refresh-row">
+                    <span class="updated" id="updatedTime">Updated —</span>
+                    <button class="refresh-btn" id="refreshBtn">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="11"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <div class="dash-item span-7">
+                <div class="card hero">
+                    <div class="hero-content">
+                        <div class="gauge">
+                            <svg class="gauge-svg" viewBox="0 0 180 180">
+                                <defs>
+                                    <filter id="gaugeGlowFilter">
+                                        <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                                        <feMerge>
+                                            <feMergeNode in="coloredBlur" />
+                                            <feMergeNode in="SourceGraphic" />
+                                        </feMerge>
+                                    </filter>
+                                </defs>
+
+                                <circle cx="90" cy="90" r="75" fill="none" stroke="var(--surface-alt)" stroke-width="12"
+                                    stroke-dasharray="540.35"></circle>
+
+                                <circle id="gaugeGlow" cx="90" cy="90" r="75" fill="#E8A33D" opacity="0.15"
+                                    filter="url(#gaugeGlowFilter)" r="80"></circle>
+
+                                <circle id="gaugeArc" cx="90" cy="90" r="75" fill="none" stroke="#E8A33D"
+                                    stroke-width="12" stroke-dasharray="540.35" stroke-dashoffset="272.17"
+                                    stroke-linecap="round" transform="rotate(-90 90 90)"></circle>
+
+                                <text x="90" y="85" text-anchor="middle" font-size="20" font-weight="700"
+                                    fill="var(--text-primary)" id="gaugeValue">-</text>
+                                <text x="90" y="105" text-anchor="middle" font-size="11" fill="var(--text-faint)"
+                                    id="gaugeLabel">AQI · Moderate</text>
+                            </svg>
+                        </div>
+
+                        <div class="hero-text">
+                            <div id="statusPill" class="status-pill">
+                                <div id="statusDot" class="status-dot"></div>
+                                <span id="statusLabel">Moderate</span>
+                            </div>
+                            <h1 id="heroTitle">Air Quality is Moderate</h1>
+                            <p id="heroDesc">Air quality is acceptable; however, sensitive individuals may experience
+                                minor symptoms.</p>
+                            <div id="heroGuidance" class="hero-guidance">Air quality is acceptable; however, sensitive
+                                individuals may experience minor symptoms.</div>
+                            <div id="trendChip" class="trend-chip" id="trendChip">
+                                <span id="trendChipText">—</span>
+                            </div>
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="stat-label">Current</div>
+                                    <div class="stat-value" id="statCurrent">—</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">24h Avg</div>
+                                    <div class="stat-value" id="statAvg">—</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">24h Min</div>
+                                    <div class="stat-value" id="statMin">—</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">24h Max</div>
+                                    <div class="stat-value" id="statMax">—</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-item span-5">
+                <div class="card full-height">
+                    <h2>Pollutants</h2>
+                    <div id="pollutantGrid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <div class="pollutant">
+                            <div class="pollutant-val">—</div>
+                            <div class="pollutant-unit">µg/m³</div>
+                            <div class="pollutant-name">PM2.5</div>
+                        </div>
+                    </div>
+
+                    <h2 style="margin-top: 22px;">Weather</h2>
+                    <div id="weatherRow" style="display: flex; flex-direction: column;"></div>
+                </div>
+            </div>
+
+            <div class="dash-item span-7">
+                <div class="card">
+                    <h2>24-Hour Trend</h2>
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-item span-5">
+                <div class="card full-height">
+                    <h2>72-Hour Forecast</h2>
+                    <div class="forecast-grid" id="forecastGrid"></div>
+                </div>
+            </div>
+
+            <div class="dash-item span-12">
+                <div class="card">
+                    <h2>Predicted AQI Trend</h2>
+                    <div class="chart-container">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="dash-item span-12">
+                <div class="card">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <h2 style="margin: 0;">SHAP Feature Importance</h2>
+                        <div class="shap-tabs">
+                            <button class="shap-tab active" onclick="setShapHorizon('24h', this)">24h</button>
+                            <button class="shap-tab" onclick="setShapHorizon('48h', this)">48h</button>
+                            <button class="shap-tab" onclick="setShapHorizon('72h', this)">72h</button>
+                        </div>
+                    </div>
+
+                    <div class="shap-stats">
+                        <div class="ss-group">
+                            <div class="ss-label">Predicted AQI</div>
+                            <div class="ss-value" id="shapPred">—</div>
+                        </div>
+                        <div class="ss-group">
+                            <div class="ss-label">Top increase</div>
+                            <div class="ss-value" style="color:var(--c-unhealthy);" id="shapTopInc">—</div>
+                        </div>
+                        <div class="ss-group">
+                            <div class="ss-label">Top decrease</div>
+                            <div class="ss-value" style="color:var(--c-good);" id="shapTopDec">—</div>
+                        </div>
+                    </div>
+                    <div id="shapBars"></div>
+                    <div class="shap-legend">
+                        <span><span class="lg-dot" style="background:var(--c-unhealthy);"></span>Increases predicted
+                            AQI</span>
+                        <span><span class="lg-dot" style="background:var(--c-good);"></span>Decreases predicted
+                            AQI</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer id="siteFooter">Pearls AQI Predictor · AI-powered air quality intelligence</footer>
+    </div>
+
+    <div id="toastStack" aria-live="polite"></div>
+
+    <script>
+        const CATS = {
+            good: { label: 'Good', color: 'var(--c-good)', hex: '#4CAF7D', max: 50 },
+            moderate: { label: 'Moderate', color: 'var(--c-moderate)', hex: '#D9C24C', max: 100 },
+            usg: { label: 'Unhealthy for Sensitive Groups', color: 'var(--c-usg)', hex: '#E8A33D', max: 150 },
+            unhealthy: { label: 'Unhealthy', color: 'var(--c-unhealthy)', hex: '#E2673B', max: 200 },
+            very_unhealthy: { label: 'Very Unhealthy', color: 'var(--c-very-unhealthy)', hex: '#A15CC4', max: 300 },
+            hazardous: { label: 'Hazardous', color: 'var(--c-hazardous)', hex: '#8B2E3E', max: 500 },
+        };
+
+        function catFor(aqi) {
+            if (aqi <= 50) return CATS.good;
+            if (aqi <= 100) return CATS.moderate;
+            if (aqi <= 150) return CATS.usg;
+            if (aqi <= 200) return CATS.unhealthy;
+            if (aqi <= 300) return CATS.very_unhealthy;
+            return CATS.hazardous;
+        }
+
+        function getHealthGuidance(aqi) {
+            if (aqi <= 50) return "Air quality is satisfactory, and air pollution poses little or no risk.";
+            if (aqi <= 100) return "Air quality is acceptable; however, sensitive individuals may experience minor symptoms.";
+            if (aqi <= 150) return "<b>Sensitive groups:</b> Reduce prolonged or heavy exertion outdoors.";
+            if (aqi <= 200) return "<b>Everyone:</b> Reduce prolonged exertion outdoors. Sensitive groups should avoid outdoor activity.";
+            if (aqi <= 300) return "<b>Everyone:</b> Avoid outdoor activities and keep windows closed.";
+            return "<b>Health warning:</b> Emergency conditions. Remain indoors and keep air activity minimal.";
+        }
+
+        let DATA = null;
+        let trendChartObj = null;
+        let forecastChartObj = null;
+        let activeShapHorizon = '24h';
+
+        function adaptApiResponse(raw) {
+            console.log("Raw payload received from backend:", raw);
+
+            const current = raw.current || {};
+            const pollutantsObj = current.pollutants || {};
+            const weatherObj = current.weather || {};
+            const trendList = raw.trend_24h || [];
+            const forecastList = raw.forecast || [];
+            const forecastHourlyList = raw.forecast_hourly || [];
+
+            const trendVals = trendList.map(t => Math.round(t.aqi));
+            const avgVal = trendVals.length ? (trendVals.reduce((a, b) => a + b, 0) / trendVals.length) : 0;
+            const minVal = trendVals.length ? Math.min(...trendVals) : 0;
+            const maxVal = trendVals.length ? Math.max(...trendVals) : 0;
+
+            let trendText = "—";
+            if (trendVals.length >= 2) {
+                const first = trendVals[0];
+                const last = trendVals[trendVals.length - 1];
+                const pct = (((last - first) / (first || 1)) * 100).toFixed(1);
+                trendText = `${pct > 0 ? '+' : ''}${pct}% over last 24h`;
+            }
+
+            const pollutants = [
+                { name: "PM2.5", val: pollutantsObj.pm25 ?? "—", unit: "µg/m³" },
+                { name: "PM10", val: pollutantsObj.pm10 ?? "—", unit: "µg/m³" },
+                { name: "O3", val: pollutantsObj.ozone ?? "—", unit: "µg/m³" },
+                { name: "NO2", val: pollutantsObj.no2 ?? "—", unit: "µg/m³" },
+                { name: "SO2", val: pollutantsObj.so2 ?? "—", unit: "µg/m³" },
+                { name: "CO", val: pollutantsObj.co ?? "—", unit: "µg/m³" }
+            ];
+
+            const weather = [
+                { label: "Temp", val: weatherObj.temperature !== undefined ? `${weatherObj.temperature}°C` : "—" },
+                { label: "Humidity", val: weatherObj.humidity !== undefined ? `${weatherObj.humidity}%` : "—" },
+                { label: "Pressure", val: weatherObj.pressure !== undefined ? `${weatherObj.pressure} hPa` : "—" }
+            ];
+
+            const forecast = [];
+            const shapMap = {};
+
+            forecastList.forEach((item, index) => {
+                let rawH = item.horizon !== undefined ? String(item.horizon).toLowerCase().trim() : '';
+                let horizonKey = '24h';
+
+                if (rawH.includes('24') || index === 0) horizonKey = '24h';
+                else if (rawH.includes('48') || index === 1) horizonKey = '48h';
+                else if (rawH.includes('72') || index === 2) horizonKey = '72h';
+
+                const aqi = Math.round(item.predicted_aqi || item.aqi || 0);
+                const rmse = item.rmse_aqi !== undefined && item.rmse_aqi !== null ? item.rmse_aqi : "N/A";
+
+                // ✅ FIXED: Use correct field names from backend
+                forecast.push({
+                    day: item.day || `Day ${index + 1}`,
+                    horizon: horizonKey,
+                    predicted_aqi: aqi,           // ✅ Match backend field name
+                    predicted_pm25: item.predicted_pm25 || 0,  // Add PM2.5 data
+                    rmse_aqi: rmse,               // ✅ Match backend field name
+                    features: item.features || []
+                });
+
+                let rawFeatures = item.features || item.shap_values || item.shap || [];
+
+                if (rawFeatures && !Array.isArray(rawFeatures) && typeof rawFeatures === 'object') {
+                    rawFeatures = Object.keys(rawFeatures).map(k => ({
+                        feature: k,
+                        shap_value: rawFeatures[k]
+                    }));
+                }
+
+                let topInc = "None";
+                let topDec = "None";
+                let maxIncVal = 0;
+                let maxDecVal = 0;
+
+                const formattedFeatures = (Array.isArray(rawFeatures) ? rawFeatures : []).map(f => {
+                    const name = f.feature || f.name || f.label || "Feature";
+                    const numVal = parseFloat(f.shap_value ?? f.value ?? f.val ?? f.contribution ?? 0);
+
+                    const val = isNaN(numVal) ? 0 : Number(numVal.toFixed(4));
+
+                    if (val > maxIncVal) { maxIncVal = val; topInc = `${name} (+${val})`; }
+                    if (val < maxDecVal) { maxDecVal = val; topDec = `${name} (${val})`; }
+
+                    return { name, val };
+                });
+
+                shapMap[horizonKey] = {
+                    pred: aqi,
+                    topInc: maxIncVal > 0 ? topInc : "None",
+                    topDec: maxDecVal < 0 ? topDec : "None",
+                    features: formattedFeatures
+                };
+            });
+
+            const forecastTrendLabels = forecastHourlyList.map((h, i) => {
+                if (h && h.timestamp) {
+                    const d = new Date(h.timestamp);
+                    if (!isNaN(d.getTime())) {
+                        const dayStr = d.toLocaleDateString([], { weekday: 'short' });
+                        const hourStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        return `${dayStr} ${hourStr}`;
+                    }
+                }
+                return `+${i + 1}h`;
+            });
+            const forecastTrendValues = forecastHourlyList.map(h => Math.round(h.predicted_aqi || h.aqi || 0));
+
+            const updatedDate = raw.updated_at ? new Date(raw.updated_at) : new Date();
+
+            return {
+                location: raw.location?.name || "Lahore",
+                region: `${raw.location?.region || ''}, ${raw.location?.country || ''}`,
+                updated: updatedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                current: {
+                    aqi: Math.round(current.aqi || 0),
+                    desc: raw.data_note || "Air quality predictions generated via ML pipeline.",
+                    guidance: getHealthGuidance(current.aqi || 0),
+                    trendText: trendText,
+                    featTime: raw.pipeline_metrics ? new Date(raw.pipeline_metrics.feature_pipeline_last_run).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Unknown",
+                    modelTime: raw.pipeline_metrics ? new Date(raw.pipeline_metrics.model_pipeline_last_run).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Unknown",
+                    predTime: raw.pipeline_metrics ? new Date(raw.pipeline_metrics.prediction_last_run).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Unknown"
+                },
+                pollutants: pollutants,
+                weather: weather,
+                trend: {
+                    labels: trendList.map(t => new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+                    values: trendVals,
+                    avg: Math.round(avgVal),
+                    min: Math.round(minVal),
+                    max: Math.round(maxVal)
+                },
+                forecast: forecast,
+                forecast_hourly: forecastHourlyList,
+                forecastTrend: {
+                    labels: forecastTrendLabels.length ? forecastTrendLabels : ["Today", "+24h", "+48h", "+72h"],
+                    values: forecastTrendValues.length ? forecastTrendValues : forecast.map(f => f.predicted_aqi)
+                },
+                shap: shapMap
+            };
+        }
+
+        async function fetchDashboardData() {
+            let json = null;
+            const t = new Date().getTime();
+
+            // Tier 1: Fetch from /api/data (Flask API / Vercel API rewrite)
+            try {
+                const response = await fetch(`/api/data?t=${t}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && !data.error && data.current) {
+                        json = data;
+                    }
+                }
+            } catch (e) {
+                console.warn("Primary /api/data endpoint unavailable, trying static JSON fallback...", e);
+            }
+
+            // Tier 2: Fetch directly from static JSON file path
+            if (!json) {
+                const fallbacks = [
+                    `../data/aqi_dashboard_data.json?t=${t}`,
+                    `/data/aqi_dashboard_data.json?t=${t}`,
+                    `./data/aqi_dashboard_data.json?t=${t}`
+                ];
+                for (const url of fallbacks) {
+                    try {
+                        const response = await fetch(url);
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data && !data.error && data.current) {
+                                json = data;
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // continue to next fallback
+                    }
+                }
+            }
+
+            if (!json) {
+                throw new Error("Unable to load AQI dashboard data from server or local JSON.");
+            }
+
+            try {
+                DATA = adaptApiResponse(json);
+                renderDashboard();
+                showToast('Air quality data updated successfully', 'success');
+            } catch (err) {
+                console.error("Failed to render dashboard data:", err);
+                showToast(`Failed to parse live data: ${err.message}`, 'error');
+            } finally {
+                setSkeletonState(false);
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const stack = document.getElementById('toastStack');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icon = type === 'success'
+                ? '<svg class="toast-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4CAF7D" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>'
+                : type === 'error'
+                    ? '<svg class="toast-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E2673B" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>'
+                    : '';
+            toast.innerHTML = `${icon}<span>${message}</span>`;
+            stack.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('leaving');
+                setTimeout(() => toast.remove(), 220);
+            }, 3200);
+        }
+
+        function setSkeletonState(isLoading) {
+            const ids = ['gaugeValue', 'statCurrent', 'statAvg', 'statMin', 'statMax', 'shapPred'];
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('skeleton', isLoading);
+            });
+        }
+
+        function renderGauge(aqi) {
+            const c = catFor(aqi);
+            const gaugeArc = document.getElementById('gaugeArc');
+            const gaugeGlow = document.getElementById('gaugeGlow');
+            const gaugeValue = document.getElementById('gaugeValue');
+            const gaugeLabel = document.getElementById('gaugeLabel');
+
+            const maxAqi = 500;
+            const totalDash = 540.35;
+            const pct = Math.min(aqi / maxAqi, 1);
+            const offset = totalDash * (1 - pct);
+
+            gaugeArc.style.stroke = c.hex;
+            gaugeArc.style.strokeDashoffset = offset;
+            gaugeGlow.style.background = c.hex;
+            gaugeValue.style.color = c.hex;
+            gaugeValue.textContent = aqi;
+            gaugeLabel.textContent = `AQI · ${c.label}`;
+        }
+
+        function renderDashboard() {
+            if (!DATA) return;
+
+            document.getElementById('headerLocation').textContent = DATA.location;
+            document.getElementById('headerRegion').textContent = DATA.region;
+            document.getElementById('updatedTime').textContent = `Updated ${DATA.updated}`;
+
+            renderGauge(DATA.current.aqi);
+            const cat = catFor(DATA.current.aqi);
+            document.getElementById('heroTitle').textContent = `Air Quality is ${cat.label}`;
+
+            const statusPill = document.getElementById('statusPill');
+            statusPill.style.background = `${cat.hex}22`;
+            statusPill.style.color = cat.hex;
+            document.getElementById('statusDot').style.background = cat.hex;
+            const statusLabel = document.getElementById('statusLabel');
+            if (statusLabel) statusLabel.textContent = cat.label;
+            document.getElementById('heroDesc').textContent = DATA.current.desc;
+            document.getElementById('heroGuidance').innerHTML = DATA.current.guidance;
+            document.getElementById('trendChipText').textContent = DATA.current.trendText;
+
+            const pGrid = document.getElementById('pollutantGrid');
+            pGrid.innerHTML = DATA.pollutants.map(p => `
+                <div class="pollutant">
+                    <div class="pollutant-val">${p.val}</div>
+                    <div class="pollutant-unit">${p.unit}</div>
+                    <div class="pollutant-name">${p.name}</div>
+                </div>
+            `).join('');
+
+            const wRow = document.getElementById('weatherRow');
+            wRow.innerHTML = DATA.weather.map(w => `
+                <div class="weather-item">
+                    <span class="wl">${w.label}</span>
+                    <span class="wv">${w.val}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('statCurrent').textContent = DATA.current.aqi;
+            document.getElementById('statAvg').textContent = DATA.trend.avg;
+            document.getElementById('statMin').textContent = DATA.trend.min;
+            document.getElementById('statMax').textContent = DATA.trend.max;
+
+            render24hChart();
+            renderForecastCards();
+            renderForecastChart();
+            renderShap();
+        }
+
+        function render24hChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChartObj) trendChartObj.destroy();
+
+            trendChartObj = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: DATA.trend.labels,
+                    datasets: [{
+                        label: '24h AQI',
+                        data: DATA.trend.values,
+                        borderColor: '#E8A33D',
+                        backgroundColor: 'rgba(232, 163, 61, 0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#E8A33D',
+                        pointHoverRadius: 7,
+                        pointHoverBackgroundColor: '#1B212B',
+                        pointHoverBorderColor: '#E8A33D',
+                        pointHoverBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#1B212B',
+                            titleColor: '#8B93A1',
+                            bodyColor: '#EDEFF2',
+                            borderColor: '#2A3140',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            titleFont: { family: 'IBM Plex Mono', size: 11 },
+                            bodyFont: { family: 'IBM Plex Mono', size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function (context) {
+                                    return `AQI: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } },
+                        y: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function renderForecastCards() {
+            const grid = document.getElementById('forecastGrid');
+            grid.innerHTML = DATA.forecast.map(f => {
+                const c = catFor(f.predicted_aqi);
+                return `
+                    <div class="forecast-card" style="--bar-color: ${c.hex}">
+                        <div class="fc-top">
+                            <span class="fc-day">${f.day}</span>
+                            <span class="fc-horizon">${f.horizon}</span>
+                        </div>
+                        <div class="fc-category" style="color:${c.hex}">${c.label}</div>
+                        <div class="fc-value" style="color:${c.hex}">${f.predicted_aqi}</div>
+                        <div class="fc-value-label">Predicted AQI</div>
+                        <div class="fc-rmse" style="margin-top: 10px; margin-bottom: 4px;">
+                            <span>Est. PM2.5</span>
+                            <b>${f.predicted_pm25 ? f.predicted_pm25 + ' µg/m³' : '—'}</b>
+                        </div>
+                        <div class="fc-rmse">
+                            <span>Model Error (RMSE)</span>
+                            <b>${typeof f.rmse_aqi === 'number' ? '±' + f.rmse_aqi : f.rmse_aqi}</b>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderForecastChart() {
+            const ctx = document.getElementById('forecastChart').getContext('2d');
+            if (forecastChartObj) forecastChartObj.destroy();
+
+            forecastChartObj = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: DATA.forecastTrend.labels,
+                    datasets: [{
+                        label: 'Predicted AQI',
+                        data: DATA.forecastTrend.values,
+                        borderColor: '#A15CC4',
+                        backgroundColor: 'rgba(161, 92, 196, 0.08)',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#A15CC4',
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#1B212B',
+                        pointHoverBorderColor: '#A15CC4',
+                        pointHoverBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            enabled: true,
+                            backgroundColor: '#1B212B',
+                            titleColor: '#8B93A1',
+                            bodyColor: '#EDEFF2',
+                            borderColor: '#2A3140',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            titleFont: { family: 'IBM Plex Mono', size: 11 },
+                            bodyFont: { family: 'IBM Plex Mono', size: 14, weight: 'bold' },
+                            callbacks: {
+                                label: function (context) {
+                                    return `Predicted AQI: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } },
+                        y: { grid: { color: '#2A3140' }, ticks: { color: '#8B93A1', font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function setShapHorizon(horizon, element) {
+            activeShapHorizon = horizon;
+            document.querySelectorAll('.shap-tab').forEach(t => t.classList.remove('active'));
+            if (element) element.classList.add('active');
+            renderShap();
+        }
+
+        function renderShap() {
+            const sData = DATA.shap ? DATA.shap[activeShapHorizon] : null;
+            const container = document.getElementById('shapBars');
+
+            if (!sData || !sData.features || sData.features.length === 0) {
+                document.getElementById('shapPred').textContent = "—";
+                document.getElementById('shapTopInc').textContent = "—";
+                document.getElementById('shapTopDec').textContent = "—";
+                container.innerHTML = `<div style="color:var(--text-faint); font-size:12px; padding: 12px 0;">No SHAP feature values returned for horizon target "${activeShapHorizon}".</div>`;
+                return;
+            }
+
+            document.getElementById('shapPred').textContent = sData.pred;
+            document.getElementById('shapTopInc').textContent = sData.topInc;
+            document.getElementById('shapTopDec').textContent = sData.topDec;
+
+            const absoluteValues = sData.features.map(f => Math.abs(f.val));
+            const maxVal = Math.max(...absoluteValues, 0.1);
+
+            container.innerHTML = sData.features.map(f => {
+                const isPos = f.val > 0;
+                const absVal = Math.abs(f.val);
+
+                let widthPct = (absVal / maxVal) * 45;
+                if (absVal > 0 && widthPct < 1.5) widthPct = 1.5;
+
+                const fillStyle = isPos
+                    ? `left: 50%; width: ${widthPct}%;`
+                    : `right: 50%; width: ${widthPct}%;`;
+
+                let displayVal = "0";
+                if (f.val > 0) displayVal = `+${f.val}`;
+                else if (f.val < 0) displayVal = `${f.val}`;
+
+                return `
+                    <div class="shap-bar-row">
+                        <div class="shap-feature" title="${f.name}">${f.name}</div>
+                        <div class="shap-track">
+                            <div class="shap-center-line"></div>
+                            <div class="shap-fill ${isPos ? 'pos' : 'neg'}" style="${fillStyle}"></div>
+                        </div>
+                        <div class="shap-val" style="${absVal === 0 ? 'opacity: 0.35;' : ''}">${displayVal}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function initRefresh() {
+            const btn = document.getElementById('refreshBtn');
+            btn.addEventListener('click', async () => {
+                btn.disabled = true;
+                btn.classList.add('spinning');
+
+                await fetchDashboardData();
+
+                btn.classList.remove('spinning');
+                btn.classList.add('success');
+
+                setTimeout(() => {
+                    btn.classList.remove('success');
+                    btn.disabled = false;
+                }, 1200);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchDashboardData();
+            initRefresh();
+        });
+    </script>
+</body>
+
+</html>
