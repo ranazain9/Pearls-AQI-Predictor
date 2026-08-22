@@ -5,8 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 
-from src.config import MODELS_DIR, CITY_NAME
-from src.features.engineering import compute_features
+from src.config import MODELS_DIR, CITY_NAME, HISTORICAL_CSV, DATA_JSON, TRAINING_JSON
+from src.features.engineering import compute_features, aqi_to_pm25
 from src.inference.predict import predict_next_3_days_with_shap
 
 def aqi_category(aqi):
@@ -34,10 +34,9 @@ def _get_rmse_for_horizon(training_meta: dict, day_key: str) -> float | None:
 def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict, checkpoint_shap: dict = None) -> dict:
     valid = history.dropna(subset=["aqi"])
     latest = valid.iloc[-1]
-    pm25_now = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0))
-    pm10_raw = float(latest.get("ground_pm10", 0) or latest.get("modeled_pm10", 0))
-    pm10_now = max(pm10_raw, pm25_now)
     aqi_now = float(latest["aqi"])
+    pm25_now = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0) or aqi_to_pm25(aqi_now))
+    pm10_now = float(latest.get("ground_pm10", 0) or latest.get("modeled_pm10", 0))
 
     cutoff = latest["timestamp"] - pd.Timedelta(hours=24)
     trend_rows = history[history["timestamp"] >= cutoff].dropna(subset=["aqi"])
@@ -112,26 +111,26 @@ DATA_JSON = ROOT / "data" / "aqi_dashboard_data.json"
 TRAINING_JSON = MODELS_DIR / "training_results.json"
 
 def _load_history() -> pd.DataFrame:
-    import hopsworks
+    """Load historical data locally first, or fall back to Hopsworks Feature Store."""
+    if HISTORICAL_CSV.exists():
+        df = pd.read_csv(HISTORICAL_CSV, parse_dates=["timestamp"])
+        return compute_features(df)
+
     import os
-    
     api_key = os.getenv("HOPSWORKS_API_KEY")
     if api_key:
         try:
+            import hopsworks
             project = hopsworks.login(api_key_value=api_key)
             fs = project.get_feature_store()
             fg = fs.get_feature_group("lahore_aqi_features", version=2)
             df = fg.read()
             if len(df) > 0:
-                print("Successfully loaded features from Hopsworks.")
                 return compute_features(df)
         except Exception as e:
             print(f"Failed to load features from Hopsworks: {e}. Falling back to local.")
-            
-    if not HISTORICAL_CSV.exists():
-        raise FileNotFoundError(f"Historical data not found at {HISTORICAL_CSV}")
-    df = pd.read_csv(HISTORICAL_CSV, parse_dates=["timestamp"])
-    return compute_features(df)
+
+    raise FileNotFoundError(f"Historical data not found at {HISTORICAL_CSV}")
 
 def run_inference_pipeline():
     """Run the inference pipeline and generate the static dashboard JSON."""

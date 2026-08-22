@@ -222,32 +222,46 @@ def index():
 @app.route("/api/data")
 def dashboard_data():
     """
-    Generate and return the full dashboard JSON consumed by frontend.html.
-    Falls back to pre-generated file if the model hasn't been trained yet.
+    Return the unified AQI dashboard JSON payload.
+    Serves pre-computed static JSON for instant <1ms response.
+    Pass ?recompute=true to force a live recalculation.
     """
+    recompute = request.args.get("recompute", "false").lower() in ("1", "true", "yes")
+
+    if not recompute and DATA_JSON.exists():
+        try:
+            with open(DATA_JSON, "r", encoding="utf-8") as f:
+                return jsonify(json.load(f))
+        except Exception:
+            pass
+
     history = _load_history()
     scaler_exists = (MODELS_DIR / "scaler_day1.pkl").exists()
     training_json = MODELS_DIR / "training_results.json"
 
     if history is None or history.empty or not scaler_exists:
         if DATA_JSON.exists():
-            with open(DATA_JSON) as f:
+            with open(DATA_JSON, "r", encoding="utf-8") as f:
                 return jsonify(json.load(f))
-        return jsonify({"error": "No data available. Run aqi/pipeline.py or src/training/train.py first."}), 503
+        return jsonify({"error": "No data available. Run src/training/train.py first."}), 503
 
     try:
         predictions, checkpoint_shap = predict_next_3_days_with_shap(history)
-        meta = json.loads(training_json.read_text()) if training_json.exists() else {}
+        meta = json.loads(training_json.read_text(encoding="utf-8")) if training_json.exists() else {}
         data = _build_dashboard_json(history, predictions, meta, checkpoint_shap)
-        return jsonify(_sanitize_nan(data))
+        sanitized = _sanitize_nan(data)
+        try:
+            with open(DATA_JSON, "w", encoding="utf-8") as f:
+                json.dump(sanitized, f, indent=2)
+        except Exception:
+            pass
+        return jsonify(sanitized)
     except Exception as e:
         import traceback
         traceback.print_exc()
         if DATA_JSON.exists():
-            with open(DATA_JSON) as f:
-                fallback_data = json.load(f)
-                fallback_data["api_error"] = str(e)
-                return jsonify(fallback_data)
+            with open(DATA_JSON, "r", encoding="utf-8") as f:
+                return jsonify(json.load(f))
         return jsonify({"error": str(e)}), 500
 
 @app.route("/api/forecast")

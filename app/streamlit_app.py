@@ -491,7 +491,7 @@ def get_health_guidance(aqi: int) -> str:
     return guidance.get(key, guidance['good'])
 
 # ==================== DATA FUNCTIONS ====================
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=15)
 def fetch_dashboard_data() -> Dict[str, Any]:
     """Fetch real air quality data and map it exactly like frontend.html's adaptApiResponse."""
     import requests
@@ -740,16 +740,34 @@ def create_trend_chart(labels: list, values: list) -> go.Figure:
     return fig
 
 def create_forecast_chart(data: Dict) -> go.Figure:
-    """Create 48-hour forecast prediction chart"""
+    """Create 72-hour forecast prediction chart with formatted timestamps and PM2.5 tooltips."""
     forecast_hourly = data.get('forecast_hourly', [])
-    hours = list(range(len(forecast_hourly)))
-    values = [f['predicted_aqi'] for f in forecast_hourly]
+    if not forecast_hourly:
+        return go.Figure()
+
+    x_labels = []
+    pm25_vals = []
+    values = []
+
+    for i, f in enumerate(forecast_hourly):
+        values.append(f.get('predicted_aqi', f.get('aqi', 0)))
+        pm25_vals.append(f.get('predicted_pm25', 0))
+        ts = f.get('timestamp')
+        if ts:
+            try:
+                dt = pd.to_datetime(ts)
+                x_labels.append(dt.strftime('%a %H:%M'))
+            except Exception:
+                x_labels.append(f"+{i+1}h")
+        else:
+            x_labels.append(f"+{i+1}h")
 
     fig = go.Figure()
 
     fig.add_trace(go.Scatter(
-        x=hours,
+        x=x_labels,
         y=values,
+        customdata=pm25_vals,
         mode='lines+markers',
         name='Predicted AQI',
         line=dict(
@@ -758,17 +776,17 @@ def create_forecast_chart(data: Dict) -> go.Figure:
             shape='spline'
         ),
         marker=dict(
-            size=5,
+            size=4,
             color=COLORS['accent_tertiary'],
-            opacity=0.8
+            opacity=0.85
         ),
         fill='tozeroy',
-        fillcolor='rgba(217, 70, 239, 0.1)',
-        hovertemplate='<b>Hour +%{x}</b><br>Predicted: %{y:.1f}<extra></extra>',
+        fillcolor='rgba(217, 70, 239, 0.12)',
+        hovertemplate='<b>%{x}</b><br>Predicted AQI: <b>%{y:.1f}</b><br>PM2.5: <b>%{customdata:.1f} µg/m³</b><extra></extra>',
     ))
 
     fig.update_layout(
-        xaxis_title="Hours from now",
+        xaxis_title="Forecast Time",
         yaxis_title="Predicted AQI",
         hovermode='x unified',
         plot_bgcolor='rgba(0,0,0,0)',
@@ -777,12 +795,12 @@ def create_forecast_chart(data: Dict) -> go.Figure:
         xaxis={
             'showgrid': False,
             'zeroline': False,
-            'fixedrange': True,
+            'nticks': 12,
         },
         yaxis={
-            'showgrid': False,
+            'showgrid': True,
+            'gridcolor': 'rgba(255,255,255,0.05)',
             'zeroline': False,
-            'fixedrange': True,
         },
         height=340,
         margin={'t': 20, 'b': 50, 'l': 60, 'r': 80},
@@ -1072,7 +1090,7 @@ def main():
     st.divider()
 
     # ==================== PREDICTIONS CHART ====================
-    render_section_header("📈", "48-Hour AQI Prediction", "Hour-by-hour projected AQI")
+    render_section_header("📈", "72-Hour Hourly AQI Projection", "Hour-by-hour projected AQI & PM2.5 levels")
     st.plotly_chart(
         create_forecast_chart(data),
         width="stretch",
