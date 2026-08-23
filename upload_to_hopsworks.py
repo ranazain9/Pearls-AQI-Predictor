@@ -28,7 +28,7 @@ except ImportError:
         "          See: https://github.com/logicalclocks/hopsworks-api/issues\n"
     )
 
-from src.features.engineering import clean_features_df
+from src.features.pipeline import _prepare_hopsworks_dataframe
 from src.config import (
     FEATURE_GROUP_NAME,
     FEATURE_GROUP_VERSION,
@@ -59,12 +59,7 @@ print(f"Using dataset: {file_path}")
 df = pd.read_csv(file_path)
 
 print("Preprocessing dataset and removing NaNs...")
-clean = clean_features_df(df)
-cols_to_upload = ["timestamp", TARGET_COLUMN] + [
-    c for c in FEATURE_COLUMNS if c in clean.columns
-]
-clean = clean[cols_to_upload].copy()
-clean["timestamp"] = pd.to_datetime(clean["timestamp"])
+clean = _prepare_hopsworks_dataframe(df)
 
 print(f"Dataset preprocessed: {len(clean)} clean rows.")
 print(f"Columns  : {list(clean.columns)}")

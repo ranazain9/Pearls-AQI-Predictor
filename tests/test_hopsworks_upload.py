@@ -55,10 +55,12 @@ class HopsworksUploadTestCase(unittest.TestCase):
     @staticmethod
     def _fake_hopsworks(insert_error: BaseException | None = None):
         feature_group = Mock(name="feature_group")
+        feature_group.online_enabled = False
         if insert_error is not None:
             feature_group.insert.side_effect = insert_error
 
         feature_store = Mock(name="feature_store")
+        feature_store.get_feature_group.side_effect = Exception("Not found")
         feature_store.get_or_create_feature_group.return_value = feature_group
 
         project = Mock(name="project")
@@ -76,8 +78,9 @@ class HopsworksUploadTestCase(unittest.TestCase):
         self.assertEqual(prepared.columns.tolist(), ["timestamp", TARGET_COLUMN, *FEATURE_COLUMNS])
         self.assertEqual(len(prepared.columns), 19)
         self.assertEqual(str(prepared["timestamp"].dtype), "datetime64[us]")
+        self.assertEqual(str(prepared[TARGET_COLUMN].dtype), "int64")
         self.assertEqual(prepared["timestamp"].dt.hour.tolist(), [1, 2, 3])
-        self.assertEqual(prepared[TARGET_COLUMN].tolist(), [100.0, 120.0, 150.0])
+        self.assertEqual(prepared[TARGET_COLUMN].tolist(), [100, 120, 150])
         self.assertEqual(prepared["hour"].tolist(), [1, 2, 3])
         self.assertEqual(prepared["day"].tolist(), [1, 1, 1])
         self.assertEqual(prepared["day_of_week"].tolist(), [3, 3, 3])
@@ -143,7 +146,7 @@ class HopsworksUploadTestCase(unittest.TestCase):
 
         with patch.dict(sys.modules, {"hopsworks": fake}), patch.dict(
             os.environ, {"HOPSWORKS_API_KEY": "test-api-key"}, clear=False
-        ):
+        ), patch.object(pipeline, "_uses_windows_hopsworks_transport", return_value=False):
             pipeline._upload_to_hopsworks(self.source)
 
         login.assert_called_once_with(api_key_value="test-api-key")
@@ -157,6 +160,7 @@ class HopsworksUploadTestCase(unittest.TestCase):
                 "Open-Meteo us_aqi target."
             ),
             event_time="timestamp",
+            online_enabled=True,
         )
         feature_group.insert.assert_called_once()
         inserted = feature_group.insert.call_args.args[0]
@@ -182,7 +186,7 @@ class HopsworksUploadTestCase(unittest.TestCase):
 
         with patch.dict(sys.modules, {"hopsworks": fake}), patch.dict(
             os.environ, {"HOPSWORKS_API_KEY": "test-api-key"}, clear=False
-        ), patch.object(pipeline.os, "name", "nt"):
+        ), patch.object(pipeline, "_uses_windows_hopsworks_transport", return_value=False), patch.object(pipeline.os, "name", "nt"):
             with self.assertRaises(ValueError) as raised:
                 pipeline._upload_to_hopsworks(self.source)
 
@@ -196,7 +200,7 @@ class HopsworksUploadTestCase(unittest.TestCase):
 
         with patch.dict(sys.modules, {"hopsworks": fake}), patch.dict(
             os.environ, {"HOPSWORKS_API_KEY": "test-api-key"}, clear=False
-        ), patch.object(pipeline.os, "name", "nt"):
+        ), patch.object(pipeline, "_uses_windows_hopsworks_transport", return_value=False), patch.object(pipeline.os, "name", "nt"):
             with self.assertRaisesRegex(RuntimeError, "Linux or WSL") as raised:
                 pipeline._upload_to_hopsworks(self.source)
 

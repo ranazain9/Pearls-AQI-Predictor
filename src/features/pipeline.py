@@ -87,6 +87,12 @@ def _prepare_hopsworks_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     ]
     clean = clean[cols_to_upload].copy()
     clean["timestamp"] = pd.to_datetime(clean["timestamp"]).astype("datetime64[us]")
+
+    int_cols = ["aqi", "hour", "day", "day_of_week", "week_of_year", "month"]
+    for col in int_cols:
+        if col in clean.columns:
+            clean[col] = clean[col].round().astype("int64")
+
     return clean
 
 
