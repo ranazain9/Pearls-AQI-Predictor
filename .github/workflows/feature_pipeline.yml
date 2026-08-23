@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write       # needed to git-push the updated CSV back
+      contents: write       # needed to git-push updated files back
 
     steps:
       - name: Checkout repository
@@ -28,31 +28,32 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements/requirements.txt
 
-      # ── Run pipeline (saves data/lahore_aqi_historical_2024_onwards.csv) ──
+      # ── Run feature & inference pipelines ─────────────────────────────────
       - name: Run feature pipeline
         env:
           AQICN_API_TOKEN: ${{ secrets.AQICN_API_TOKEN }}
           OPEN_METEO_URL: ${{ vars.OPEN_METEO_URL }}
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
-        run: python pipelines/feature_pipeline.py --upload
-        
+        run: |
+          python pipelines/feature_pipeline.py --upload
 
-      # ── Commit the updated CSV back to the repo ───────────────────────────
-      - name: Commit updated feature CSV
+      # ── Commit updated dashboard JSON & CSV back to the repo ──────────────
+      - name: Commit and push updated dashboard data
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/lahore_aqi_historical_2024_onwards.csv || true
+          git add data/aqi_dashboard_data.json data/lahore_aqi_3day_forecast.csv data/lahore_aqi_historical_2024_onwards.csv data/lahore_aqi_features.csv || true
           # Only commit when there are actual changes
           git diff --cached --quiet || \
-            git commit -m "chore(data): hourly feature update [skip ci]"
-          git push || true
+            (git commit -m "chore(data): hourly AQI dashboard update [$(date -u +'%Y-%m-%d %H:%M UTC')]" && git pull --rebase && git push) || true
 
       # ── Also upload as a workflow artifact (available for 7 days) ─────────
       - name: Upload feature artifact
         uses: actions/upload-artifact@v4
         with:
-          name: aqi-features-${{ github.run_id }}
-          path: data/lahore_aqi_historical_2024_onwards.csv
+          name: aqi-dashboard-${{ github.run_id }}
+          path: |
+            data/aqi_dashboard_data.json
+            data/lahore_aqi_historical_2024_onwards.csv
           retention-days: 7
           if-no-files-found: warn

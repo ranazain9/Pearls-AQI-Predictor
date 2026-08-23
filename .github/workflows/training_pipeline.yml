@@ -17,7 +17,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Pull the latest commit (which includes the CSV updated by feature pipeline)
           fetch-depth: 1
 
       - name: Set up Python 3.11
@@ -41,21 +40,20 @@ jobs:
             exit 1
           fi
 
-      # ── Train models for all 3 horizons ───────────────────────────────────
-      - name: Run training pipeline
-        run: python pipelines/training_pipeline.py
-        # Note: --register flag is omitted (hopsworks SDK unavailable on PyPI).
-        # Models are saved to models/ directory and committed below.
+      # ── Train models for all 3 horizons and update predictions ────────────
+      - name: Run training & inference pipeline
+        run: |
+          python pipelines/training_pipeline.py
+          python pipelines/inference_pipeline.py
 
-      # ── Commit trained models back to repo ────────────────────────────────
-      - name: Commit trained models
+      # ── Commit trained models & updated JSON back to repo ─────────────────
+      - name: Commit trained models and dashboard data
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add models/ || true
+          git add models/ data/aqi_dashboard_data.json data/lahore_aqi_3day_forecast.csv || true
           git diff --cached --quiet || \
-            git commit -m "chore(models): daily model retrain [skip ci]"
-          git push || true
+            (git commit -m "chore(models): daily model retrain and forecast update" && git pull --rebase && git push) || true
 
       # ── Also upload as a workflow artifact (available for 30 days) ────────
       - name: Upload model artifacts
