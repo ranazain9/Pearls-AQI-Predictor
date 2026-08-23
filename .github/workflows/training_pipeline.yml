@@ -40,10 +40,13 @@ jobs:
             exit 1
           fi
 
-      # ── Train models for all 3 horizons and update predictions ────────────
+      # ── Train models for all 3 horizons, register to Hopsworks & predict ───
       - name: Run training & inference pipeline
+        env:
+          HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
+          HOPSWORKS_PROJECT_NAME: ${{ vars.HOPSWORKS_PROJECT_NAME }}
         run: |
-          python pipelines/training_pipeline.py
+          python pipelines/training_pipeline.py --register
           python pipelines/inference_pipeline.py
 
       # ── Commit trained models & updated JSON back to repo ─────────────────
@@ -53,7 +56,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add models/ data/aqi_dashboard_data.json data/lahore_aqi_3day_forecast.csv || true
           git diff --cached --quiet || \
-            (git commit -m "chore(models): daily model retrain and forecast update" && git pull --rebase && git push) || true
+            (git commit -m "chore(models): daily model retrain, Hopsworks registration, and forecast update" && git pull --rebase && git push) || true
 
       # ── Also upload as a workflow artifact (available for 30 days) ────────
       - name: Upload model artifacts
