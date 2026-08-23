@@ -1,0 +1,50 @@
+[
+  {
+    "feature": "pm25_lag_1",
+    "importance": 74.5076
+  },
+  {
+    "feature": "aqi_change_rate",
+    "importance": 3.8234
+  },
+  {
+    "feature": "hour",
+    "importance": 3.237
+  },
+  {
+    "feature": "pm25_lag_24",
+    "importance": 2.2977
+  },
+  {
+    "feature": "modeled_pm25",
+    "importance": 1.6947
+  },
+  {
+    "feature": "wind_speed",
+    "importance": 1.5507
+  },
+  {
+    "feature": "temperature",
+    "importance": 1.5322
+  },
+  {
+    "feature": "month",
+    "importance": 1.1095
+  },
+  {
+    "feature": "humidity",
+    "importance": 1.0396
+  },
+  {
+    "feature": "pressure",
+    "importance": 0.7838
+  },
+  {
+    "feature": "modeled_pm10",
+    "importance": 0.3733
+  },
+  {
+    "feature": "day_of_week",
+    "importance": 0.2366
+  }
+]

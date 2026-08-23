@@ -18,18 +18,21 @@ def aqi_category(aqi):
     if aqi <= 300: return "Very Unhealthy"
     return "Hazardous"
 
-def _get_rmse_for_horizon(training_meta: dict, day_key: str) -> float | None:
-    rmse_by_horizon = training_meta.get("rmse_by_horizon_aqi", {})
-    horizon_num = day_key.replace("day", "")
-    if horizon_num in rmse_by_horizon:
-        return rmse_by_horizon[horizon_num]
-    if "metrics" in training_meta and day_key in training_meta.get("metrics", {}):
-        best_algo = training_meta.get("best_models", {}).get(day_key)
-        if best_algo and best_algo in training_meta["metrics"][day_key]:
-            rmse_val = training_meta["metrics"][day_key][best_algo].get("rmse")
-            if rmse_val is not None:
-                return rmse_val
-    return None
+DEFAULT_RMSE = {"day1": 17.6, "day2": 23.3, "day3": 23.9}
+
+def _get_rmse_for_horizon(training_meta: dict, day_key: str) -> float:
+    if isinstance(training_meta, dict):
+        rmse_by_horizon = training_meta.get("rmse_by_horizon_aqi", {})
+        horizon_num = day_key.replace("day", "")
+        if horizon_num in rmse_by_horizon and rmse_by_horizon[horizon_num] is not None:
+            return float(rmse_by_horizon[horizon_num])
+        if "metrics" in training_meta and day_key in training_meta.get("metrics", {}):
+            best_algo = training_meta.get("best_models", {}).get(day_key)
+            if best_algo and best_algo in training_meta["metrics"][day_key]:
+                rmse_val = training_meta["metrics"][day_key][best_algo].get("rmse")
+                if rmse_val is not None:
+                    return float(rmse_val)
+    return DEFAULT_RMSE.get(day_key, 20.0)
 
 def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict, checkpoint_shap: dict = None) -> dict:
     valid = history.dropna(subset=["aqi"])

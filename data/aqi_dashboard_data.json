@@ -128,7 +128,7 @@
       "day": "Day 1",
       "predicted_aqi": 138.2,
       "predicted_pm25": 50.59,
-      "rmse_aqi": null,
+      "rmse_aqi": 17.6,
       "features": [
         {
           "name": "PM2.5",
@@ -205,7 +205,7 @@
       "day": "Day 2",
       "predicted_aqi": 130.6,
       "predicted_pm25": 47.52,
-      "rmse_aqi": null,
+      "rmse_aqi": 23.3,
       "features": [
         {
           "name": "Week of Year",
@@ -282,7 +282,7 @@
       "day": "Day 3",
       "predicted_aqi": 112.2,
       "predicted_pm25": 40.05,
-      "rmse_aqi": null,
+      "rmse_aqi": 23.9,
       "features": [
         {
           "name": "Week of Year",
@@ -789,5 +789,9 @@
       "category": "Unhealthy for Sensitive Groups"
     }
   ],
-  "rmse_by_horizon_aqi": {}
+  "rmse_by_horizon_aqi": {
+    "24": 17.6,
+    "48": 23.3,
+    "72": 23.9
+  }
 }

@@ -3,17 +3,16 @@
 .venv311/
 .venv313/
 venv/
+myvenv/
 __pycache__/
 *.pyc
-.env
 .env.*
 !.env.example
+.hopsworks_cache/
 
-__pycache__/
-myvenv/
-models/
+models/*
+!models/*.json
 *.pkl
 *.keras
 debug-*.log
 .vercel
-.env*
