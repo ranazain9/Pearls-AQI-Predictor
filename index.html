@@ -1387,12 +1387,22 @@
             });
             const forecastTrendValues = forecastHourlyList.map(h => Math.round(h.predicted_aqi || h.aqi || 0));
 
-            const updatedDate = raw.updated_at ? new Date(raw.updated_at) : new Date();
+            let dateStr = raw.updated_at || "";
+            if (dateStr && !dateStr.endsWith("Z") && !dateStr.includes("+")) {
+                dateStr += "Z";
+            }
+            const updatedDate = dateStr ? new Date(dateStr) : new Date();
+            let displayTime = "";
+            try {
+                displayTime = updatedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Karachi' }) + " PKT";
+            } catch (e) {
+                displayTime = updatedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " PKT";
+            }
 
             return {
                 location: raw.location?.name || "Lahore",
                 region: `${raw.location?.region || ''}, ${raw.location?.country || ''}`,
-                updated: updatedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                updated: displayTime,
                 current: {
                     aqi: Math.round(current.aqi || 0),
                     desc: raw.data_note || "Air quality predictions generated via ML pipeline.",

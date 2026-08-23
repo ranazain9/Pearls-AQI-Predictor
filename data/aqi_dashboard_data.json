@@ -4,7 +4,7 @@
     "region": "Punjab",
     "country": "Pakistan"
   },
-  "updated_at": "2026-08-23T08:44:14.750382",
+  "updated_at": "2026-08-23T08:44:14Z",
   "data_note": "Powered by Best Model: Random Forest \u00b7 via src pipeline",
   "current": {
     "aqi": 151.0,

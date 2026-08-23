@@ -70,7 +70,7 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
             "region": "Punjab",
             "country": "Pakistan",
         },
-        "updated_at": pd.Timestamp.now().isoformat(),
+        "updated_at": pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%dT%H:%M:%SZ"),
         "data_note": f"Powered by Best Model: {best_model} · via src pipeline",
         "current": {
             "aqi": aqi_now,
