@@ -15,6 +15,9 @@ AQICN_STATION_ID = "A471607"
 HISTORICAL_CSV = DATA_DIR / "lahore_aqi_historical_2024_onwards.csv"
 LEGACY_HISTORICAL_CSV = DATA_DIR / "lahore_aqi_historical.csv"
 FEATURES_CSV = DATA_DIR / "lahore_aqi_features.csv"
+DATA_JSON = DATA_DIR / "aqi_dashboard_data.json"
+TRAINING_JSON = MODELS_DIR / "training_results.json"
+FORECAST_CSV = DATA_DIR / "lahore_aqi_3day_forecast.csv"
 
 # Hopsworks
 FEATURE_GROUP_NAME = "lahore_aqi_features"
