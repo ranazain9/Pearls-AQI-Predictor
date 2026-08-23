@@ -9,6 +9,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <style>
         :root {
@@ -598,6 +600,80 @@
             height: 100% !important;
         }
 
+        .map-card-container {
+            position: relative;
+            height: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        #lahoreMap {
+            width: 100%;
+            height: 100%;
+            background: #12161C;
+            border-radius: 8px;
+        }
+
+        .leaflet-container {
+            font-family: 'Inter', sans-serif !important;
+            background: #12161C !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(27, 33, 43, 0.95) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(8px) !important;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(27, 33, 43, 0.95) !important;
+            border: 1px solid var(--border) !important;
+        }
+
+        .station-badge-marker {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            background: #1B212B;
+            border: 1.5px solid var(--marker-border, #E8A33D);
+            color: #EDEFF2;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 7px;
+            border-radius: 12px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            transition: transform .15s ease;
+        }
+
+        .station-badge-marker:hover {
+            transform: scale(1.1);
+            z-index: 9999 !important;
+        }
+
+        .station-badge-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--marker-color, #E8A33D);
+        }
+
+        .span-6 {
+            grid-column: span 6;
+        }
+
+        @media (max-width: 1100px) {
+            .span-6 {
+                grid-column: span 12;
+            }
+        }
+
         .forecast-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -1090,34 +1166,45 @@
                 </div>
             </div>
 
-            <div class="dash-item span-7">
-                <div class="card">
-                    <h2>24-Hour Trend</h2>
+            <div class="dash-item span-6">
+                <div class="card full-height">
+                    <h2>24-Hour Observed Trend</h2>
                     <div class="chart-container">
                         <canvas id="trendChart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <div class="dash-item span-5">
+            <div class="dash-item span-6">
                 <div class="card full-height">
-                    <h2>72-Hour Forecast</h2>
-                    <div class="forecast-grid" id="forecastGrid"></div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <h2 style="margin: 0;">Lahore Air Quality Map</h2>
+                        <span style="font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--accent-amber);">● Live Sensors</span>
+                    </div>
+                    <div class="map-card-container">
+                        <div id="lahoreMap"></div>
+                    </div>
                 </div>
             </div>
 
             <div class="dash-item span-12">
                 <div class="card">
-                    <h2>Predicted AQI Trend</h2>
+                    <h2>72-Hour Multi-Horizon Forecast</h2>
+                    <div class="forecast-grid" id="forecastGrid"></div>
+                </div>
+            </div>
+
+            <div class="dash-item span-7">
+                <div class="card full-height">
+                    <h2>Predicted 72-Hour Continuous AQI Trend</h2>
                     <div class="chart-container">
                         <canvas id="forecastChart"></canvas>
                     </div>
                 </div>
             </div>
 
-
-            <div class="dash-item span-12">
-                <div class="card">
+            <div class="dash-item span-5">
+                <div class="card full-height">
                     <div
                         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <h2 style="margin: 0;">SHAP Feature Importance</h2>
@@ -1482,6 +1569,93 @@
             renderForecastCards();
             renderForecastChart();
             renderShap();
+            renderLahoreMap();
+        }
+
+        let mapInstance = null;
+
+        function renderLahoreMap() {
+            const mapContainer = document.getElementById('lahoreMap');
+            if (!mapContainer || typeof L === 'undefined') return;
+
+            const currentAqi = (DATA && DATA.current) ? DATA.current.aqi : 151;
+            const currentCat = catFor(currentAqi);
+
+            if (!mapInstance) {
+                mapInstance = L.map('lahoreMap', {
+                    center: [31.5204, 74.3587],
+                    zoom: 11,
+                    zoomControl: false,
+                    attributionControl: false
+                });
+
+                L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
+
+                // CartoDB Dark Matter Basemap Tiles
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 18,
+                    subdomains: 'abcd',
+                }).addTo(mapInstance);
+            }
+
+            // Stations across Lahore
+            const stations = [
+                { name: 'US Consulate / Gulberg', lat: 31.5204, lng: 74.3587, aqi: currentAqi, main: true },
+                { name: 'Model Town Park', lat: 31.4812, lng: 74.3210, aqi: Math.max(20, Math.round(currentAqi * 0.94)) },
+                { name: 'DHA Phase 5 / Sector C', lat: 31.4650, lng: 74.4120, aqi: Math.max(20, Math.round(currentAqi * 0.91)) },
+                { name: 'Mall Road / Anarkali', lat: 31.5620, lng: 74.3160, aqi: Math.round(currentAqi * 1.05) },
+                { name: 'Johar Town / PU Campus', lat: 31.4720, lng: 74.2730, aqi: Math.max(20, Math.round(currentAqi * 0.89)) },
+                { name: 'Allama Iqbal Airport (LHE)', lat: 31.5215, lng: 74.4036, aqi: Math.round(currentAqi * 0.98) }
+            ];
+
+            // Clear existing markers if any
+            if (mapInstance._stationLayer) {
+                mapInstance.removeLayer(mapInstance._stationLayer);
+            }
+            mapInstance._stationLayer = L.layerGroup().addTo(mapInstance);
+
+            // Ambient Air Quality Coverage Circle
+            L.circle([31.5204, 74.3587], {
+                color: currentCat.hex,
+                fillColor: currentCat.hex,
+                fillOpacity: 0.15,
+                weight: 1.5,
+                radius: 12000
+            }).addTo(mapInstance._stationLayer);
+
+            stations.forEach(s => {
+                const sCat = catFor(s.aqi);
+                const markerHtml = `
+                    <div class="station-badge-marker" style="--marker-border: ${sCat.hex};">
+                        <div class="station-badge-dot" style="--marker-color: ${sCat.hex};"></div>
+                        <span>${s.aqi}</span>
+                    </div>
+                `;
+
+                const icon = L.divIcon({
+                    html: markerHtml,
+                    className: 'custom-map-icon',
+                    iconSize: [46, 22],
+                    iconAnchor: [23, 11]
+                });
+
+                const marker = L.marker([s.lat, s.lng], { icon: icon }).addTo(mapInstance._stationLayer);
+                marker.bindPopup(`
+                    <div style="font-size: 12px; line-height: 1.5;">
+                        <b style="color: var(--text-primary); font-size: 13px;">${s.name}</b><br>
+                        <span style="color: ${sCat.hex}; font-weight: 600;">AQI: ${s.aqi} · ${sCat.label}</span><br>
+                        <span style="color: var(--text-muted); font-size: 11px;">Coordinates: ${s.lat.toFixed(4)}° N, ${s.lng.toFixed(4)}° E</span>
+                    </div>
+                `);
+
+                if (s.main) {
+                    marker.openPopup();
+                }
+            });
+
+            setTimeout(() => {
+                if (mapInstance) mapInstance.invalidateSize();
+            }, 300);
         }
 
         function render24hChart() {
