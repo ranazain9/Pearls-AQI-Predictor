@@ -4,8 +4,8 @@
     "region": "Punjab",
     "country": "Pakistan"
   },
-  "updated_at": "2026-08-23T08:44:14Z",
-  "data_note": "Powered by Best Model: Random Forest \u00b7 via src pipeline",
+  "updated_at": "2026-08-23T09:41:06Z",
+  "data_note": "Powered by Best Model: D1: Xgboost, D2: Xgboost, D3: Xgboost \u00b7 via src pipeline",
   "current": {
     "aqi": 151.0,
     "category": "Unhealthy",
@@ -282,7 +282,7 @@
       "day": "Day 3",
       "predicted_aqi": 112.2,
       "predicted_pm25": 40.05,
-      "rmse_aqi": 23.9,
+      "rmse_aqi": 24.0,
       "features": [
         {
           "name": "Week of Year",
@@ -792,6 +792,6 @@
   "rmse_by_horizon_aqi": {
     "24": 17.6,
     "48": 23.3,
-    "72": 23.9
+    "72": 24.0
   }
 }
