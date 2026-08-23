@@ -45,16 +45,95 @@
             min-height: 100vh;
             padding: 28px 20px 60px;
             overflow-x: hidden;
+            position: relative;
         }
 
         html {
             overflow-x: hidden;
         }
 
+        /* Cartographic Lahore Vector Map Layer */
+        .map-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0.35;
+            transition: opacity 0.4s ease;
+        }
+
+        .map-backdrop.map-vibrant {
+            opacity: 0.55;
+        }
+
+        .map-backdrop.map-minimal {
+            opacity: 0.08;
+        }
+
+        .map-svg {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .radar-wave {
+            transform-origin: center;
+            animation: radarPulse 3.5s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+        }
+
+        .radar-wave.w2 {
+            animation-delay: 1.4s;
+        }
+
+        @keyframes radarPulse {
+            0% {
+                transform: scale(0.6);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(2.8);
+                opacity: 0;
+            }
+        }
+
+        .geo-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-amber);
+            background: rgba(232, 163, 61, 0.1);
+            border: 1px solid rgba(232, 163, 61, 0.25);
+            padding: 3px 8px;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+
+        .geo-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-amber);
+            box-shadow: 0 0 8px var(--accent-amber);
+            animation: beaconBlink 2s ease-in-out infinite;
+        }
+
+        @keyframes beaconBlink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
+        }
+
         .wrap {
             width: 100%;
             max-width: 2200px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         .dashboard-grid {
@@ -270,10 +349,13 @@
         }
 
         .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: rgba(27, 33, 43, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(42, 49, 64, 0.85);
             border-radius: 12px;
             padding: 22px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
         }
 
         .card.full-height {
@@ -289,8 +371,10 @@
         }
 
         .hero {
-            background: linear-gradient(135deg, rgba(232, 163, 61, 0.08), rgba(161, 92, 196, 0.04));
-            border: 1px solid rgba(232, 163, 61, 0.2);
+            background: linear-gradient(135deg, rgba(232, 163, 61, 0.12), rgba(27, 33, 43, 0.88));
+            border: 1px solid rgba(232, 163, 61, 0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
 
         .hero-content {
@@ -770,6 +854,125 @@
 </head>
 
 <body>
+    <!-- Lahore Cartographic Geospatial Map Layer -->
+    <div id="mapBackdrop" class="map-backdrop" aria-hidden="true">
+        <svg class="map-svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <radialGradient id="mapGlow" cx="48%" cy="45%" r="50%">
+                    <stop offset="0%" stop-color="rgba(232, 163, 61, 0.18)" />
+                    <stop offset="40%" stop-color="rgba(161, 92, 196, 0.08)" />
+                    <stop offset="85%" stop-color="transparent" />
+                </radialGradient>
+                <linearGradient id="riverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="rgba(56, 189, 248, 0.5)" />
+                    <stop offset="100%" stop-color="rgba(76, 175, 125, 0.3)" />
+                </linearGradient>
+                <linearGradient id="canalGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="rgba(56, 189, 248, 0.4)" />
+                    <stop offset="100%" stop-color="rgba(76, 175, 125, 0.25)" />
+                </linearGradient>
+                <pattern id="cartoGrid" width="80" height="80" patternUnits="userSpaceOnUse">
+                    <path d="M 80 0 L 0 0 0 80" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1" />
+                    <circle cx="80" cy="80" r="1.5" fill="rgba(255,255,255,0.06)" />
+                </pattern>
+            </defs>
+
+            <!-- Ambient Glow & Geospatial Grid -->
+            <rect width="100%" height="100%" fill="url(#mapGlow)" />
+            <rect width="100%" height="100%" fill="url(#cartoGrid)" />
+
+            <!-- Coordinate Lat/Long grid lines & Labels -->
+            <g stroke="rgba(255,255,255,0.05)" stroke-width="1" stroke-dasharray="4 6">
+                <line x1="200" y1="0" x2="200" y2="1000" />
+                <line x1="500" y1="0" x2="500" y2="1000" />
+                <line x1="800" y1="0" x2="800" y2="1000" />
+                <line x1="1100" y1="0" x2="1100" y2="1000" />
+                <line x1="1400" y1="0" x2="1400" y2="1000" />
+                <line x1="0" y1="200" x2="1600" y2="200" />
+                <line x1="0" y1="500" x2="1600" y2="500" />
+                <line x1="0" y1="800" x2="1600" y2="800" />
+            </g>
+            <g fill="rgba(255,255,255,0.2)" font-family="IBM Plex Mono" font-size="10" letter-spacing="1">
+                <text x="205" y="30">74°10'E</text>
+                <text x="505" y="30">74°20'E</text>
+                <text x="805" y="30">74°30'E [LAHORE URBAN]</text>
+                <text x="1105" y="30">74°40'E</text>
+                <text x="1405" y="30">74°50'E</text>
+                <text x="20" y="205">31°40'N</text>
+                <text x="20" y="505">31°30'N</text>
+                <text x="20" y="805">31°20'N</text>
+            </g>
+
+            <!-- Ravi River (curving northwest) -->
+            <path d="M 50,-50 C 220,120 380,180 460,260 C 520,320 540,420 480,550 C 430,660 310,750 220,880 C 150,970 80,1050 0,1100"
+                  fill="none" stroke="url(#riverGrad)" stroke-width="22" stroke-linecap="round" opacity="0.65" filter="blur(1px)" />
+            <text x="310" y="225" fill="rgba(56,189,248,0.4)" font-family="Space Grotesk" font-size="12" font-weight="600" letter-spacing="3" transform="rotate(25 310 225)">RAVI RIVER BASIN</text>
+
+            <!-- Lahore Canal Expressway (flowing diagonally northeast to southwest) -->
+            <path d="M 1450,150 C 1180,320 920,470 720,620 C 580,720 430,860 300,1020"
+                  fill="none" stroke="url(#canalGrad)" stroke-width="7" stroke-linecap="round" opacity="0.8" />
+            <text x="960" y="440" fill="rgba(76,175,125,0.45)" font-family="Space Grotesk" font-size="11" font-weight="600" letter-spacing="2" transform="rotate(-32 960 440)">LAHORE CANAL EXPRESSWAY</text>
+
+            <!-- Lahore Ring Road (L-20 Outer Orbital Highway) -->
+            <path d="M 680,210 C 1050,190 1280,320 1350,560 C 1420,780 1150,920 840,940 C 580,950 440,840 480,680 C 510,540 500,320 680,210 Z"
+                  fill="none" stroke="rgba(232, 163, 61, 0.4)" stroke-width="3" stroke-dasharray="10 5" />
+            <text x="1220" y="380" fill="rgba(232,163,61,0.5)" font-family="Space Grotesk" font-size="10" font-weight="600" letter-spacing="2" transform="rotate(45 1220 380)">RING ROAD (L-20)</text>
+
+            <!-- Major Arterial Roads & Expressways -->
+            <g stroke="rgba(255,255,255,0.12)" stroke-width="2" stroke-linecap="round">
+                <!-- Mall Road -->
+                <path d="M 520,380 L 820,460 L 980,510" />
+                <!-- Ferozepur Road -->
+                <path d="M 760,450 L 850,680 L 960,980" />
+                <!-- Jail Road / Gulberg Main Blvd -->
+                <path d="M 720,510 L 890,560 L 1020,620" />
+                <!-- Multan Road -->
+                <path d="M 530,420 L 380,580 L 220,780" />
+                <!-- GT Road -->
+                <path d="M 580,280 L 860,200 L 1250,120" />
+                <!-- Raiwind Road -->
+                <path d="M 620,710 L 520,860 L 410,1020" />
+                <!-- Bedian Road -->
+                <path d="M 1120,680 L 1320,880 L 1480,1020" />
+            </g>
+
+            <!-- Urban District Outlines & Landmarks -->
+            <g stroke="rgba(255,255,255,0.06)" stroke-width="1">
+                <!-- Walled City Grid -->
+                <rect x="520" y="320" width="80" height="70" fill="rgba(232,163,61,0.05)" />
+                <!-- Gulberg District -->
+                <polygon points="760,490 880,510 890,620 770,590" fill="rgba(161,92,196,0.05)" />
+                <!-- DHA Phases 1-6 -->
+                <polygon points="1000,520 1280,560 1220,780 960,720" fill="rgba(76,175,125,0.05)" />
+                <!-- Model Town Roundabout -->
+                <circle cx="780" cy="690" r="45" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
+                <!-- Allama Iqbal Airport Runway -->
+                <line x1="1120" y1="460" x2="1240" y2="410" stroke="rgba(255,255,255,0.3)" stroke-width="4" stroke-linecap="square" />
+            </g>
+
+            <!-- District Markers & Typographic Landmarks -->
+            <g fill="rgba(255,255,255,0.3)" font-family="Space Grotesk" font-size="11" font-weight="600" letter-spacing="1">
+                <text x="530" y="315">WALLED CITY</text>
+                <text x="810" y="540">GULBERG</text>
+                <text x="1080" y="610">DHA LAHORE</text>
+                <text x="750" y="700">MODEL TOWN</text>
+                <text x="620" y="640">JOHAR TOWN</text>
+                <text x="1140" y="400">LHE AIRPORT</text>
+            </g>
+
+            <!-- Active Monitoring Station (Center Pin + Radar Pulse) -->
+            <g transform="translate(800, 480)">
+                <circle r="36" fill="rgba(232, 163, 61, 0.08)" class="radar-wave" />
+                <circle r="22" fill="rgba(232, 163, 61, 0.16)" class="radar-wave w2" />
+                <circle r="8" fill="var(--accent-amber)" />
+                <circle r="3.5" fill="#12161C" />
+                <text x="16" y="5" fill="var(--accent-amber)" font-family="IBM Plex Mono" font-size="11" font-weight="600" letter-spacing="0.5">
+                    AQI SENSOR BASE [31.5204°N, 74.3587°E]
+                </text>
+            </g>
+        </svg>
+    </div>
+
     <div class="wrap">
         <header>
             <div class="brand">
@@ -782,8 +985,14 @@
             <div class="header-right">
                 <div class="location" id="headerLocation">Lahore</div>
                 <div class="location-sub" id="headerRegion">Punjab, Pakistan</div>
+                <div class="geo-badge">
+                    <span class="geo-dot"></span> 31.5204° N, 74.3587° E · 217m
+                </div>
                 <div class="refresh-row">
                     <span class="updated" id="updatedTime">Updated —</span>
+                    <button class="refresh-btn" id="mapToggleBtn" title="Toggle Lahore Map Intensity" style="margin-right: 4px;">
+                        🗺️ Map
+                    </button>
                     <button class="refresh-btn" id="refreshBtn">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -1471,6 +1680,25 @@
             }).join('');
         }
 
+        function initMapToggle() {
+            const btn = document.getElementById('mapToggleBtn');
+            const backdrop = document.getElementById('mapBackdrop');
+            if (!btn || !backdrop) return;
+
+            let modeIndex = 0;
+            const modes = [
+                { name: '🗺️ Map: Subtle', cls: '' },
+                { name: '🗺️ Map: Vibrant', cls: 'map-vibrant' },
+                { name: '🗺️ Map: Minimal', cls: 'map-minimal' }
+            ];
+
+            btn.addEventListener('click', () => {
+                modeIndex = (modeIndex + 1) % modes.length;
+                backdrop.className = `map-backdrop ${modes[modeIndex].cls}`.trim();
+                btn.textContent = modes[modeIndex].name;
+            });
+        }
+
         function initRefresh() {
             const btn = document.getElementById('refreshBtn');
             btn.addEventListener('click', async () => {
@@ -1492,6 +1720,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             fetchDashboardData();
             initRefresh();
+            initMapToggle();
         });
     </script>
 </body>
