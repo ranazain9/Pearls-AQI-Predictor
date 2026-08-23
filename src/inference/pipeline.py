@@ -38,8 +38,8 @@ def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, trai
     pm25_now = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0) or aqi_to_pm25(aqi_now))
     pm10_now = float(latest.get("ground_pm10", 0) or latest.get("modeled_pm10", 0))
 
-    cutoff = latest["timestamp"] - pd.Timedelta(hours=24)
-    trend_rows = history[history["timestamp"] >= cutoff].dropna(subset=["aqi"])
+    valid_sorted = valid.sort_values("timestamp")
+    trend_rows = valid_sorted.tail(24)
     trend_24h = [
         {"timestamp": str(r["timestamp"]), "aqi": round(float(r["aqi"]), 1)}
         for _, r in trend_rows.iterrows()
