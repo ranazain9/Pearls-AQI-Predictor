@@ -144,22 +144,33 @@ def fetch_openmeteo_current_row() -> pd.DataFrame:
 
 
 def current_reading_to_row(aqicn_data: dict | None, meteo_row: pd.DataFrame) -> pd.DataFrame:
-    """Combine Open-Meteo features with optional AQICN ground-truth PM2.5."""
+    """Combine Open-Meteo features with optional AQICN ground-truth PM2.5, PM10 and live AQI."""
     row = meteo_row.iloc[0].to_dict()
 
     pm25 = None
+    pm10 = None
+    aqi_val = None
     if aqicn_data:
         iaqi = aqicn_data.get("iaqi", {})
         pm25 = iaqi.get("pm25", {}).get("v")
+        pm10 = iaqi.get("pm10", {}).get("v")
+        if "aqi" in aqicn_data and aqicn_data["aqi"] is not None:
+            try:
+                aqi_val = float(aqicn_data["aqi"])
+            except (ValueError, TypeError):
+                aqi_val = None
 
     if pm25 is None:
         pm25 = row.get("modeled_pm25")
+    if pm10 is None:
+        pm10 = row.get("modeled_pm10")
 
     row["ground_pm25"] = pm25
+    row["ground_pm10"] = pm10
 
-    # NOTE: "aqi" stays as Open-Meteo us_aqi — no manual formula.
-    # If not present (old fetch paths), it remains None and will be filled by Hopsworks reads.
-    if "aqi" not in row or row["aqi"] is None:
-        row["aqi"] = row.get("modeled_pm25")  # Temporary fallback only; prefer us_aqi
+    if aqi_val is not None:
+        row["aqi"] = aqi_val
+    elif "aqi" not in row or row["aqi"] is None:
+        row["aqi"] = row.get("modeled_pm25")  # Fallback to modeled PM2.5 if us_aqi missing
 
     return pd.DataFrame([row])

@@ -35,14 +35,22 @@ def _get_rmse_for_horizon(training_meta: dict, day_key: str) -> float:
     return DEFAULT_RMSE.get(day_key, 20.0)
 
 def _build_dashboard_json(history: pd.DataFrame, predictions: pd.DataFrame, training_meta: dict, checkpoint_shap: dict = None) -> dict:
-    valid = history.dropna(subset=["aqi"])
-    latest = valid.iloc[-1]
+    valid = history.dropna(subset=["aqi"]).copy()
+    valid["_ts_dt"] = pd.to_datetime(valid["timestamp"])
+    
+    # Filter observations up to current UTC time
+    now_utc = pd.Timestamp.now(tz="UTC").tz_localize(None)
+    observed = valid[valid["_ts_dt"] <= now_utc]
+    if observed.empty:
+        observed = valid
+
+    observed_sorted = observed.sort_values("_ts_dt")
+    latest = observed_sorted.iloc[-1]
     aqi_now = float(latest["aqi"])
     pm25_now = float(latest.get("ground_pm25", 0) or latest.get("modeled_pm25", 0) or aqi_to_pm25(aqi_now))
     pm10_now = float(latest.get("ground_pm10", 0) or latest.get("modeled_pm10", 0))
 
-    valid_sorted = valid.sort_values("timestamp")
-    trend_rows = valid_sorted.tail(24)
+    trend_rows = observed_sorted.tail(24)
     trend_24h = [
         {"timestamp": str(r["timestamp"]), "aqi": round(float(r["aqi"]), 1)}
         for _, r in trend_rows.iterrows()
