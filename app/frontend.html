@@ -1168,7 +1168,7 @@
 
             <div class="dash-item span-6">
                 <div class="card full-height">
-                    <h2>24-Hour Observed Trend</h2>
+                    <h2>24-Hour Observed Trend <span style="font-size: 11px; font-weight: 500; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;">(PKT)</span></h2>
                     <div class="chart-container">
                         <canvas id="trendChart"></canvas>
                     </div>
@@ -1196,7 +1196,7 @@
 
             <div class="dash-item span-7">
                 <div class="card full-height">
-                    <h2>Predicted 72-Hour Continuous AQI Trend</h2>
+                    <h2>Predicted 72-Hour Continuous AQI Trend <span style="font-size: 11px; font-weight: 500; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;">(PKT)</span></h2>
                     <div class="chart-container">
                         <canvas id="forecastChart"></canvas>
                     </div>
@@ -1374,14 +1374,40 @@
                 };
             });
 
+            function parseUtcToDate(tsStr) {
+                if (!tsStr) return new Date();
+                let s = String(tsStr).trim();
+                if (!s.endsWith("Z") && !s.includes("+")) {
+                    s = s.replace(" ", "T") + "Z";
+                }
+                return new Date(s);
+            }
+
+            function formatPktTime(tsStr) {
+                try {
+                    const d = parseUtcToDate(tsStr);
+                    if (isNaN(d.getTime())) return String(tsStr);
+                    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Karachi' });
+                } catch (e) {
+                    return String(tsStr);
+                }
+            }
+
+            function formatPktDateTime(tsStr) {
+                try {
+                    const d = parseUtcToDate(tsStr);
+                    if (isNaN(d.getTime())) return String(tsStr);
+                    const dayStr = d.toLocaleDateString([], { weekday: 'short', timeZone: 'Asia/Karachi' });
+                    const hourStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Karachi' });
+                    return `${dayStr} ${hourStr}`;
+                } catch (e) {
+                    return String(tsStr);
+                }
+            }
+
             const forecastTrendLabels = forecastHourlyList.map((h, i) => {
                 if (h && h.timestamp) {
-                    const d = new Date(h.timestamp);
-                    if (!isNaN(d.getTime())) {
-                        const dayStr = d.toLocaleDateString([], { weekday: 'short' });
-                        const hourStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        return `${dayStr} ${hourStr}`;
-                    }
+                    return formatPktDateTime(h.timestamp);
                 }
                 return `+${i + 1}h`;
             });
@@ -1415,7 +1441,7 @@
                 pollutants: pollutants,
                 weather: weather,
                 trend: {
-                    labels: trendList.map(t => new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+                    labels: trendList.map(t => formatPktTime(t.timestamp)),
                     values: trendVals,
                     avg: Math.round(avgVal),
                     min: Math.round(minVal),
