@@ -96,6 +96,7 @@
                 transform: scale(0.6);
                 opacity: 0.9;
             }
+
             100% {
                 transform: scale(2.8);
                 opacity: 0;
@@ -126,8 +127,17 @@
         }
 
         @keyframes beaconBlink {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(0.8); }
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.8);
+            }
         }
 
         .wrap {
@@ -932,7 +942,8 @@
 <body>
     <!-- Lahore Cartographic Geospatial Map Layer -->
     <div id="mapBackdrop" class="map-backdrop" aria-hidden="true">
-        <svg class="map-svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+        <svg class="map-svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"
+            xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <radialGradient id="mapGlow" cx="48%" cy="45%" r="50%">
                     <stop offset="0%" stop-color="rgba(232, 163, 61, 0.18)" />
@@ -980,19 +991,25 @@
             </g>
 
             <!-- Ravi River (curving northwest) -->
-            <path d="M 50,-50 C 220,120 380,180 460,260 C 520,320 540,420 480,550 C 430,660 310,750 220,880 C 150,970 80,1050 0,1100"
-                  fill="none" stroke="url(#riverGrad)" stroke-width="22" stroke-linecap="round" opacity="0.65" filter="blur(1px)" />
-            <text x="310" y="225" fill="rgba(56,189,248,0.4)" font-family="Space Grotesk" font-size="12" font-weight="600" letter-spacing="3" transform="rotate(25 310 225)">RAVI RIVER BASIN</text>
+            <path
+                d="M 50,-50 C 220,120 380,180 460,260 C 520,320 540,420 480,550 C 430,660 310,750 220,880 C 150,970 80,1050 0,1100"
+                fill="none" stroke="url(#riverGrad)" stroke-width="22" stroke-linecap="round" opacity="0.65"
+                filter="blur(1px)" />
+            <text x="310" y="225" fill="rgba(56,189,248,0.4)" font-family="Space Grotesk" font-size="12"
+                font-weight="600" letter-spacing="3" transform="rotate(25 310 225)">RAVI RIVER BASIN</text>
 
             <!-- Lahore Canal Expressway (flowing diagonally northeast to southwest) -->
-            <path d="M 1450,150 C 1180,320 920,470 720,620 C 580,720 430,860 300,1020"
-                  fill="none" stroke="url(#canalGrad)" stroke-width="7" stroke-linecap="round" opacity="0.8" />
-            <text x="960" y="440" fill="rgba(76,175,125,0.45)" font-family="Space Grotesk" font-size="11" font-weight="600" letter-spacing="2" transform="rotate(-32 960 440)">LAHORE CANAL EXPRESSWAY</text>
+            <path d="M 1450,150 C 1180,320 920,470 720,620 C 580,720 430,860 300,1020" fill="none"
+                stroke="url(#canalGrad)" stroke-width="7" stroke-linecap="round" opacity="0.8" />
+            <text x="960" y="440" fill="rgba(76,175,125,0.45)" font-family="Space Grotesk" font-size="11"
+                font-weight="600" letter-spacing="2" transform="rotate(-32 960 440)">LAHORE CANAL EXPRESSWAY</text>
 
             <!-- Lahore Ring Road (L-20 Outer Orbital Highway) -->
-            <path d="M 680,210 C 1050,190 1280,320 1350,560 C 1420,780 1150,920 840,940 C 580,950 440,840 480,680 C 510,540 500,320 680,210 Z"
-                  fill="none" stroke="rgba(232, 163, 61, 0.4)" stroke-width="3" stroke-dasharray="10 5" />
-            <text x="1220" y="380" fill="rgba(232,163,61,0.5)" font-family="Space Grotesk" font-size="10" font-weight="600" letter-spacing="2" transform="rotate(45 1220 380)">RING ROAD (L-20)</text>
+            <path
+                d="M 680,210 C 1050,190 1280,320 1350,560 C 1420,780 1150,920 840,940 C 580,950 440,840 480,680 C 510,540 500,320 680,210 Z"
+                fill="none" stroke="rgba(232, 163, 61, 0.4)" stroke-width="3" stroke-dasharray="10 5" />
+            <text x="1220" y="380" fill="rgba(232,163,61,0.5)" font-family="Space Grotesk" font-size="10"
+                font-weight="600" letter-spacing="2" transform="rotate(45 1220 380)">RING ROAD (L-20)</text>
 
             <!-- Major Arterial Roads & Expressways -->
             <g stroke="rgba(255,255,255,0.12)" stroke-width="2" stroke-linecap="round">
@@ -1023,11 +1040,13 @@
                 <!-- Model Town Roundabout -->
                 <circle cx="780" cy="690" r="45" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" />
                 <!-- Allama Iqbal Airport Runway -->
-                <line x1="1120" y1="460" x2="1240" y2="410" stroke="rgba(255,255,255,0.3)" stroke-width="4" stroke-linecap="square" />
+                <line x1="1120" y1="460" x2="1240" y2="410" stroke="rgba(255,255,255,0.3)" stroke-width="4"
+                    stroke-linecap="square" />
             </g>
 
             <!-- District Markers & Typographic Landmarks -->
-            <g fill="rgba(255,255,255,0.3)" font-family="Space Grotesk" font-size="11" font-weight="600" letter-spacing="1">
+            <g fill="rgba(255,255,255,0.3)" font-family="Space Grotesk" font-size="11" font-weight="600"
+                letter-spacing="1">
                 <text x="530" y="315">WALLED CITY</text>
                 <text x="810" y="540">GULBERG</text>
                 <text x="1080" y="610">DHA LAHORE</text>
@@ -1042,7 +1061,8 @@
                 <circle r="22" fill="rgba(232, 163, 61, 0.16)" class="radar-wave w2" />
                 <circle r="8" fill="var(--accent-amber)" />
                 <circle r="3.5" fill="#12161C" />
-                <text x="16" y="5" fill="var(--accent-amber)" font-family="IBM Plex Mono" font-size="11" font-weight="600" letter-spacing="0.5">
+                <text x="16" y="5" fill="var(--accent-amber)" font-family="IBM Plex Mono" font-size="11"
+                    font-weight="600" letter-spacing="0.5">
                     AQI SENSOR BASE [31.5204°N, 74.3587°E]
                 </text>
             </g>
@@ -1066,7 +1086,8 @@
                 </div>
                 <div class="refresh-row">
                     <span class="updated" id="updatedTime">Updated —</span>
-                    <button class="refresh-btn" id="mapToggleBtn" title="Toggle Lahore Map Intensity" style="margin-right: 4px;">
+                    <button class="refresh-btn" id="mapToggleBtn" title="Toggle Lahore Map Intensity"
+                        style="margin-right: 4px;">
                         🗺️ Map
                     </button>
                     <button class="refresh-btn" id="refreshBtn">
@@ -1168,7 +1189,9 @@
 
             <div class="dash-item span-6">
                 <div class="card full-height">
-                    <h2>24-Hour Observed Trend <span style="font-size: 11px; font-weight: 500; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;">(PKT)</span></h2>
+                    <h2>24-Hour Observed Trend <span
+                            style="font-size: 11px; font-weight: 500; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;">(PKT)</span>
+                    </h2>
                     <div class="chart-container">
                         <canvas id="trendChart"></canvas>
                     </div>
@@ -1177,9 +1200,11 @@
 
             <div class="dash-item span-6">
                 <div class="card full-height">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                         <h2 style="margin: 0;">Lahore Air Quality Map</h2>
-                        <span style="font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--accent-amber);">● Live Sensors</span>
+                        <span style="font-family: 'IBM Plex Mono'; font-size: 11px; color: var(--accent-amber);">● Live
+                            Sensors</span>
                     </div>
                     <div class="map-card-container">
                         <div id="lahoreMap"></div>
@@ -1196,7 +1221,9 @@
 
             <div class="dash-item span-7">
                 <div class="card full-height">
-                    <h2>Predicted 72-Hour Continuous AQI Trend <span style="font-size: 11px; font-weight: 500; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;">(PKT)</span></h2>
+                    <h2>Predicted 72-Hour Continuous AQI Trend <span
+                            style="font-size: 11px; font-weight: 500; color: var(--text-faint); font-family: 'IBM Plex Mono', monospace;">(PKT)</span>
+                    </h2>
                     <div class="chart-container">
                         <canvas id="forecastChart"></canvas>
                     </div>
@@ -1627,10 +1654,11 @@
 
                 L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
 
-                // CartoDB Dark Matter Basemap Tiles
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                // CartoDB Dark Matter Basemap Tiles with API Key
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?api_key=cb1_2nm0_1_221a50106127ac8ae3d3ef31', {
                     maxZoom: 18,
                     subdomains: 'abcd',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 }).addTo(mapInstance);
             }
 
