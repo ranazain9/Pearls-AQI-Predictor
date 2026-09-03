@@ -4,31 +4,27 @@
     "region": "Punjab",
     "country": "Pakistan"
   },
-  "updated_at": "2026-09-02T23:18:12Z",
+  "updated_at": "2026-09-03T03:33:30Z",
   "data_note": "Powered by Best Model: D1: Xgboost, D2: Xgboost, D3: Xgboost \u00b7 via src pipeline",
   "current": {
-    "aqi": 149.0,
-    "category": "Unhealthy for Sensitive Groups",
-    "timestamp": "2026-09-02 23:00:00",
+    "aqi": 151.0,
+    "category": "Unhealthy",
+    "timestamp": "2026-09-03 03:00:00",
     "pollutants": {
       "pm25": 110.0,
       "pm10": 77.0,
-      "ozone": 60.0,
-      "no2": 24.4,
-      "so2": 11.3,
-      "co": 435.0
+      "ozone": 84.0,
+      "no2": 23.5,
+      "so2": 14.1,
+      "co": 595.0
     },
     "weather": {
       "temperature": 27.2,
-      "humidity": 84.0,
-      "pressure": 979.6
+      "humidity": 83.0,
+      "pressure": 980.9
     }
   },
   "trend_24h": [
-    {
-      "timestamp": "2026-08-28 23:00:00",
-      "aqi": 100.0
-    },
     {
       "timestamp": "2026-08-29 06:00:00",
       "aqi": 116.0
@@ -120,672 +116,676 @@
     {
       "timestamp": "2026-09-02 23:00:00",
       "aqi": 149.0
+    },
+    {
+      "timestamp": "2026-09-03 03:00:00",
+      "aqi": 151.0
     }
   ],
   "forecast": [
     {
       "horizon": "24h",
       "day": "Day 1",
-      "predicted_aqi": 129.9,
-      "predicted_pm25": 47.23,
+      "predicted_aqi": 141.0,
+      "predicted_pm25": 51.74,
       "rmse_aqi": 19.4,
       "features": [
         {
-          "name": "Ozone (O\u2083)",
-          "val": -4.9
-        },
-        {
           "name": "PM2.5",
-          "val": -3.84
+          "val": -6.64
         },
         {
           "name": "AQI Change Rate",
-          "val": -3.06
-        },
-        {
-          "name": "Humidity",
-          "val": -1.99
-        },
-        {
-          "name": "Hour of Day",
-          "val": -1.25
-        },
-        {
-          "name": "Carbon Monoxide (CO)",
-          "val": -1.19
-        },
-        {
-          "name": "PM10",
-          "val": -1.0
-        },
-        {
-          "name": "Week of Year",
-          "val": -1.0
-        },
-        {
-          "name": "Current AQI",
-          "val": -0.98
-        },
-        {
-          "name": "Pressure",
-          "val": -0.96
+          "val": 5.74
         },
         {
           "name": "Day",
-          "val": -0.8
+          "val": -1.79
         },
         {
-          "name": "Nitric Oxide (NO)",
-          "val": 0.7
+          "name": "Ozone (O\u2083)",
+          "val": -1.56
         },
         {
-          "name": "Temperature",
-          "val": -0.63
+          "name": "Pressure",
+          "val": -1.54
         },
         {
-          "name": "Nitrogen Dioxide (NO\u2082)",
-          "val": 0.5
+          "name": "PM10",
+          "val": -0.86
         },
         {
-          "name": "Sulfur Dioxide (SO\u2082)",
-          "val": -0.26
+          "name": "Carbon Monoxide (CO)",
+          "val": -0.81
         },
         {
           "name": "Month",
-          "val": -0.16
+          "val": -0.63
+        },
+        {
+          "name": "Humidity",
+          "val": -0.61
+        },
+        {
+          "name": "Nitrogen Dioxide (NO\u2082)",
+          "val": 0.61
+        },
+        {
+          "name": "Week of Year",
+          "val": -0.57
+        },
+        {
+          "name": "Current AQI",
+          "val": -0.45
+        },
+        {
+          "name": "Hour of Day",
+          "val": -0.41
+        },
+        {
+          "name": "Sulfur Dioxide (SO\u2082)",
+          "val": -0.22
+        },
+        {
+          "name": "Temperature",
+          "val": -0.13
         },
         {
           "name": "Day of Week",
-          "val": -0.15
+          "val": -0.09
+        },
+        {
+          "name": "Nitric Oxide (NO)",
+          "val": 0.07
         }
       ]
     },
     {
       "horizon": "48h",
       "day": "Day 2",
-      "predicted_aqi": 126.9,
-      "predicted_pm25": 46.0,
+      "predicted_aqi": 135.5,
+      "predicted_pm25": 49.49,
       "rmse_aqi": 22.7,
       "features": [
         {
+          "name": "AQI Change Rate",
+          "val": 5.76
+        },
+        {
           "name": "Current AQI",
-          "val": -7.78
+          "val": -3.98
         },
         {
           "name": "Week of Year",
-          "val": -4.16
-        },
-        {
-          "name": "Nitric Oxide (NO)",
-          "val": 3.03
-        },
-        {
-          "name": "AQI Change Rate",
-          "val": -2.83
-        },
-        {
-          "name": "Carbon Monoxide (CO)",
-          "val": -2.72
-        },
-        {
-          "name": "Day",
-          "val": -2.46
+          "val": -3.66
         },
         {
           "name": "Pressure",
-          "val": -2.36
+          "val": -2.93
         },
         {
           "name": "Month",
-          "val": -2.17
-        },
-        {
-          "name": "PM2.5",
-          "val": 1.55
-        },
-        {
-          "name": "Humidity",
-          "val": -1.38
-        },
-        {
-          "name": "Temperature",
-          "val": -1.07
-        },
-        {
-          "name": "Ozone (O\u2083)",
-          "val": -0.63
+          "val": -2.26
         },
         {
           "name": "Hour of Day",
-          "val": -0.55
+          "val": -1.69
         },
         {
-          "name": "Sulfur Dioxide (SO\u2082)",
-          "val": -0.32
+          "name": "Humidity",
+          "val": -1.62
         },
         {
-          "name": "Day of Week",
-          "val": 0.18
+          "name": "Temperature",
+          "val": -1.4
+        },
+        {
+          "name": "PM2.5",
+          "val": -1.17
+        },
+        {
+          "name": "Ozone (O\u2083)",
+          "val": -0.97
+        },
+        {
+          "name": "Carbon Monoxide (CO)",
+          "val": -0.87
         },
         {
           "name": "PM10",
-          "val": -0.13
+          "val": -0.76
+        },
+        {
+          "name": "Day of Week",
+          "val": 0.63
+        },
+        {
+          "name": "Day",
+          "val": -0.34
+        },
+        {
+          "name": "Sulfur Dioxide (SO\u2082)",
+          "val": 0.1
         },
         {
           "name": "Nitrogen Dioxide (NO\u2082)",
           "val": 0.06
+        },
+        {
+          "name": "Nitric Oxide (NO)",
+          "val": -0.05
         }
       ]
     },
     {
       "horizon": "72h",
       "day": "Day 3",
-      "predicted_aqi": 140.9,
-      "predicted_pm25": 51.68,
+      "predicted_aqi": 132.4,
+      "predicted_pm25": 48.25,
       "rmse_aqi": 22.5,
       "features": [
         {
           "name": "Current AQI",
-          "val": -7.85
-        },
-        {
-          "name": "Week of Year",
-          "val": -4.11
-        },
-        {
-          "name": "Nitric Oxide (NO)",
-          "val": 3.82
-        },
-        {
-          "name": "Pressure",
-          "val": -3.03
-        },
-        {
-          "name": "Humidity",
-          "val": -1.89
-        },
-        {
-          "name": "Month",
-          "val": -1.72
-        },
-        {
-          "name": "Day",
-          "val": 1.57
-        },
-        {
-          "name": "PM2.5",
-          "val": 1.15
-        },
-        {
-          "name": "PM10",
-          "val": 0.99
-        },
-        {
-          "name": "Day of Week",
-          "val": 0.97
-        },
-        {
-          "name": "Temperature",
-          "val": -0.93
-        },
-        {
-          "name": "Sulfur Dioxide (SO\u2082)",
-          "val": 0.69
-        },
-        {
-          "name": "Hour of Day",
-          "val": 0.32
-        },
-        {
-          "name": "Carbon Monoxide (CO)",
-          "val": 0.23
-        },
-        {
-          "name": "Nitrogen Dioxide (NO\u2082)",
-          "val": 0.14
+          "val": -8.1
         },
         {
           "name": "AQI Change Rate",
-          "val": -0.12
+          "val": 7.55
+        },
+        {
+          "name": "Week of Year",
+          "val": -7.37
+        },
+        {
+          "name": "Pressure",
+          "val": -3.33
+        },
+        {
+          "name": "Hour of Day",
+          "val": -2.47
+        },
+        {
+          "name": "Humidity",
+          "val": -1.78
+        },
+        {
+          "name": "Temperature",
+          "val": -1.13
+        },
+        {
+          "name": "Nitric Oxide (NO)",
+          "val": -0.81
+        },
+        {
+          "name": "Month",
+          "val": -0.59
+        },
+        {
+          "name": "Day",
+          "val": -0.57
+        },
+        {
+          "name": "PM2.5",
+          "val": 0.5
+        },
+        {
+          "name": "Sulfur Dioxide (SO\u2082)",
+          "val": -0.34
+        },
+        {
+          "name": "PM10",
+          "val": 0.27
+        },
+        {
+          "name": "Nitrogen Dioxide (NO\u2082)",
+          "val": 0.26
         },
         {
           "name": "Ozone (O\u2083)",
-          "val": -0.03
+          "val": -0.19
+        },
+        {
+          "name": "Day of Week",
+          "val": -0.13
+        },
+        {
+          "name": "Carbon Monoxide (CO)",
+          "val": -0.04
         }
       ]
     }
   ],
   "forecast_hourly": [
     {
-      "timestamp": "2026-09-03T00:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
-      "category": "Unhealthy for Sensitive Groups"
-    },
-    {
-      "timestamp": "2026-09-03T01:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
-      "category": "Unhealthy for Sensitive Groups"
-    },
-    {
-      "timestamp": "2026-09-03T02:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
-      "category": "Unhealthy for Sensitive Groups"
-    },
-    {
-      "timestamp": "2026-09-03T03:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
-      "category": "Unhealthy for Sensitive Groups"
-    },
-    {
       "timestamp": "2026-09-03T04:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T05:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T06:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T07:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T08:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T09:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T10:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T11:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T12:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T13:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T14:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T15:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T16:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T17:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T18:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T19:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T20:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T21:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T22:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-03T23:00:00",
-      "predicted_pm25": 47.23,
-      "predicted_aqi": 129.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T00:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T01:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T02:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T03:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 51.74,
+      "predicted_aqi": 141.0,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T04:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T05:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T06:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T07:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T08:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T09:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T10:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T11:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T12:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T13:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T14:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T15:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T16:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T17:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T18:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T19:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T20:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T21:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T22:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-04T23:00:00",
-      "predicted_pm25": 46.0,
-      "predicted_aqi": 126.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T00:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T01:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T02:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T03:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 49.49,
+      "predicted_aqi": 135.5,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T04:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T05:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T06:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T07:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T08:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T09:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T10:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T11:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T12:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T13:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T14:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T15:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T16:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T17:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T18:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T19:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T20:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T21:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T22:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     },
     {
       "timestamp": "2026-09-05T23:00:00",
-      "predicted_pm25": 51.68,
-      "predicted_aqi": 140.9,
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
+      "category": "Unhealthy for Sensitive Groups"
+    },
+    {
+      "timestamp": "2026-09-06T00:00:00",
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
+      "category": "Unhealthy for Sensitive Groups"
+    },
+    {
+      "timestamp": "2026-09-06T01:00:00",
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
+      "category": "Unhealthy for Sensitive Groups"
+    },
+    {
+      "timestamp": "2026-09-06T02:00:00",
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
+      "category": "Unhealthy for Sensitive Groups"
+    },
+    {
+      "timestamp": "2026-09-06T03:00:00",
+      "predicted_pm25": 48.25,
+      "predicted_aqi": 132.4,
       "category": "Unhealthy for Sensitive Groups"
     }
   ],
